@@ -1,0 +1,13 @@
+# ignore hidden files
+.*
+# but not .gitignore
+!.gitignore
+
+#ignore dirs
+Outputs/
+
+#files
+*.root
+*.png
+*.pdf
+*.so
