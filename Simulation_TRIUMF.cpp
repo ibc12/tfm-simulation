@@ -135,8 +135,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
-    srim->ReadInterpolations("light", "./Inputs/SRIMData/transformed/protons_deuterium_900mb.dat");
-    srim->ReadInterpolations("beam", "./Inputs/SRIMData/transformed/11Li_deuterium_900mb.dat");
+    srim->ReadInterpolations("light", "./Inputs/SRIMData/transformed/proton_in_900mb_butane.dat");
+    srim->ReadInterpolations("beam", "./Inputs/SRIMData/transformed/11Li_in_900mb_butane.dat");
     srim->ReadInterpolations("lightInSil", "./Inputs/SRIMData/transformed/protons_silicon.dat");
 
     // Load geometry
@@ -149,6 +149,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     rand->SetSeed(); // random path in each execution of macro
 
     // Cross section sampler
+    // Cross section depends on excitation energy state
     auto* xs {new ActPhysics::CrossSection()};
     if(Ex == 0)
     {
@@ -165,8 +166,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
         xs->ReadData(data_to_read);
     }
-        
     
+    double beamParticles {(3e5) * 6 * 24 * 3600}; // 3e5 pps 6 days
+    double gasDensity {2.428e-4}; // g/cm3
+    double gasMolarDensity {0.9 * 4.0282 + 0.1 * 58.12}; // g/mol 
+    double gasParticles {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
+    double alpha {beamParticles * gasParticles * xs->GetTotalXScm() / iterations};
+    std::cout << alpha << '\n';
 
     // Runner: contains utility functions to execute multiple actions
     ActSim::Runner runner(srim, geometry, rand, sigmaSil);

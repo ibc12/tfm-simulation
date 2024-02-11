@@ -17,13 +17,14 @@ void ActPhysics::CrossSection::ReadData(const std::string& file)
     {
         fAngleData.push_back(angle);
         fXSData.push_back(xs);
+        fTotalXS += xs * angle * TMath::Sin(angle);
     }
     streamer.close();
     //Once is read, we initialize our object
     Init();
 }
 
-void ActPhysics::CrossSection::ReadData(const TString& file)
+void ActPhysics::CrossSection::ReadData(const TString& file) 
 {
     std::ifstream streamer {file};
     if(!streamer)
@@ -34,6 +35,7 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
     {
         fAngleData.push_back(angle);
         fXSData.push_back(xs);
+        fTotalXS += xs * angle * TMath::Sin(angle);
     }
     streamer.close();
     //Once is read, we initialize our object

@@ -58,7 +58,7 @@ outdirectory = './transformed/'
 pressures = [140]
 particle = 'protons'
 #files = [particle + '_in_' + str(pressure) + 'mb_butane' for pressure in pressures]
-files = ["protons_deuterium_900mb", "11Li_deuterium_900mb"]
+files = ["proton_in_900mb_butane", "Lithium_in_900mb_butane"]
 #files = ['alphas_in_50mb_butane']##['protons_in_30mb_butane', 'protons_in_100mb_butane', 'protons_in_500mb_butane']
 dfs = []
 for file in files:

@@ -16,6 +16,7 @@ namespace ActPhysics
         std::vector<double> fAngleData {};
         std::vector<double> fXSData {};
         double fSumXS {};
+        double fTotalXS {};
         std::vector<double> fCDFData {};
         TSpline3* fCDF {};
         TSpline3* fTheoXS {};
@@ -26,6 +27,8 @@ namespace ActPhysics
         void Draw() const;
         double Sample(const double angle);
         void Theo();
+        double GetTotalXSmbarn() const { return fTotalXS; }
+        double GetTotalXScm() const { return fTotalXS * 1e-27; }
 
     private:
         void Init();
