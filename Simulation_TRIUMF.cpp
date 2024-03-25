@@ -71,7 +71,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
 
     // NAME OF OUTPUT FILE
     TString fileName {
-        TString::Format("./Outputs/transfer_TRIUMF_Eex_%.3f_nPS_%d_pPS_%d.root", Ex, neutronPS, protonPS)};
+        TString::Format("./Outputs/%.1fMeV/transfer_TRIUMF_Eex_%.3f_nPS_%d_pPS_%d.root", T1, Ex, neutronPS, protonPS)};
 
     // number of iterations
     const int iterations {static_cast<int>(1e6)};
@@ -131,6 +131,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexBefore->SetTitle("Eex without any res.");
     auto* hPhiAll {new TH1F("hPhiAll", "Phi in LAB;#phi [deg]", 360, 0, 180)};
     auto* hPhi {(TH1F*)hPhiAll->Clone("hPhi")};
+    // New histograms
+    auto* hRPxEVertex {new TH2D{"hRPxEVertex", "Entrance;RP.X [mm];E_{Vertex} [MeV]", 200, 0, 300, 150, 0, 30}};
+    auto* hRPxEVertex3 {(TH2D*)hRPxEVertex->Clone("hRPxEVertex3")};
+    hRPxEVertex3->SetTitle("Side");
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -167,7 +171,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         xs->ReadData(data_to_read);
     }
     
-    double beamParticles {(3e5) * 6 * 24 * 3600}; // 3e5 pps 6 days
+    double beamParticles {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double gasDensity {2.428e-4}; // g/cm3
     double gasMolarDensity {0.9 * 4.0282 + 0.1 * 58.12}; // g/mol 
     double gasParticles {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
@@ -384,6 +388,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
                 hsSP[hitAssembly0]->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
             else
                 hsSP[hitAssembly0]->Fill(silPoint0InMM.X(), silPoint0InMM.Z());
+                    
+            // Debug histograms
+            if(hitAssembly0 == 2)
+                hRPxEVertex->Fill(vertex.X(), T3Recon);
+
+            if(hitAssembly0 == 3)
+                hRPxEVertex3->Fill(vertex.X(), T3Recon);
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -431,7 +442,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
     auto* gtheo {theokin.GetKinematicLine3()};
     auto* cAfter {new TCanvas("cAfter", "After implementing all")};
-    cAfter->DivideSquare(4);
+    cAfter->DivideSquare(6);
     cAfter->cd(1);
     hThetaESil->Draw("col");
     cAfter->cd(2);
@@ -441,6 +452,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexAfter->Draw("hist");
     cAfter->cd(4);
     hKin->Draw("colz");
+    cAfter->cd(5);
+    hRPxEVertex->Draw("colz");
+    cAfter->cd(6);
+    hRPxEVertex3->Draw("colz");
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());

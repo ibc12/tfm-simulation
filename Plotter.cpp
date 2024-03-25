@@ -40,7 +40,7 @@ void Plotter(const std::vector<double>& Exs,
     for(const auto& Ex : Exs)
     {
         //Get DF
-        ROOT::RDataFrame df("SimulationTTree", TString::Format("/home/fica/Ivan/tfm-simulation/Outputs/transfer_TRIUMF_Eex_%.3f_nPS_%d_pPS_%d.root", Ex, neutronPS, protonPS));
+        ROOT::RDataFrame df("SimulationTTree", TString::Format("/home/fica/Ivan/tfm-simulation/Outputs/%.1fMeV/transfer_TRIUMF_Eex_%.3f_nPS_%d_pPS_%d.root", T1, Ex, neutronPS, protonPS));
            
         //Book histograms
         auto hEx {df.Histo1D({TString::Format("hEx%d", idx), TString::Format("Ex = %.2f MeV with nPS = %d and pPS = %d;E_{ex} [MeV]", Ex, neutronPS, protonPS),
