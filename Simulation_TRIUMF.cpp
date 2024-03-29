@@ -46,7 +46,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // Named after BuildGeoTRIUMF when constructing the SiliconAssebly variables
     // must be [0, max) in ActRoot::Geometry
     // Must iterate in this range to get in which layer we have an impact
-    const int maxLayers {4};
+    const int maxLayers {5};
 
     // SIGMAS
     // Resolutions to be implemented as gaussians
@@ -102,8 +102,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     ActPhysics::Kinematics kingen {p1, p2, p3, p4, T1*p1.GetAMU(), Ex};
     kingen.Print();
     // get threshold energy
-    // Beam losses energy in gas, but since this reaction has a Tbeam threshold. Compute it here since it is constant
-    auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, Ex).GetT1Thresh()};
+    // Beam losses energy in gas, but since this reaction has a Tbeam threshold. Compute it here since it is constant (now done inside, BW)
 
     // Histograms
     // WARNING! To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
@@ -113,6 +112,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hThetaLabDebug {(TH1F*)hThetaCM->Clone("hThetaLabDebug")};
     hThetaLabDebug->SetTitle("Theta discriminated in layer 0;#theta_{Lab} [degree]");
     auto* hDistL0 {new TH1F("hDistL0", "Distance vertex to L0;dist [mm]", 300, 0., 600.)};
+    auto* hDistGas {(TH1F*)hDistL0->Clone("hDistGas")};
+    hThetaCMAll->SetTitle("Dist in Stopped gas particles");
     auto* hThetaESil {new TH2F("hThetaELab", "Theta vs Energy in Sil0;#theta_{LAB} [degree];E_{Sil0} [MeV]", 140, 0.,
                                180., 100, 0., 60.)};
     auto* hThetaEVertex {(TH2F*)hThetaESil->Clone("hThetaEVertex")};
@@ -134,7 +135,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // New histograms
     auto* hRPxEVertex {new TH2D{"hRPxEVertex", "Entrance;RP.X [mm];E_{Vertex} [MeV]", 200, 0, 300, 150, 0, 30}};
     auto* hRPxEVertex3 {(TH2D*)hRPxEVertex->Clone("hRPxEVertex3")};
-    hRPxEVertex3->SetTitle("Side");
+    hRPxEVertex3->SetTitle("Side Left");
+    auto* hRPxEVertex4 {(TH2D*)hRPxEVertex->Clone("hRPxEVertex4")};
+    hRPxEVertex4->SetTitle("Side Right");
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -176,7 +179,6 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     double gasMolarDensity {0.9 * 4.0282 + 0.1 * 58.12}; // g/mol 
     double gasParticles {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
     double alpha {beamParticles * gasParticles * xs->GetTotalXScm() / iterations};
-    std::cout << alpha << '\n';
 
     // Runner: contains utility functions to execute multiple actions
     ActSim::Runner runner(srim, geometry, rand, sigmaSil);
@@ -235,8 +237,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        if(std::isnan(TBeam) || TBeam < beamThreshold)
+        double randEx {rand->BreitWigner(0, 0.1)};
+        kingen.SetBeamEnergy(TBeam);
+        auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
+        std::cout<<beamThreshold<<" "<<TBeam<<std::endl;
+        if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
+        }
         // std::cout<<"TBeam = "<<TBeam<<" MeV"<<'\n';
         // 3-> Run kinematics!
         // This is to be replaced by ActSim::Kinematics
@@ -244,8 +251,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // 3.2-> Build yourself the thetaCM and phiCM using uniform distrib
         // 3.3-> Set kinematics through SetRecoilKinematics(thetaCM, phiCM, 3, true)
         // in that call to function, 3 is the particle whose angle are being set; the light in this case
-        kingen.SetBeamEnergy(TBeam);
-        kingen.SetEx(Ex);
+        kingen.SetEx(randEx);
         const double weight {1.};
         // focus on recoil 3 (light)
         // obtain thetas and energies
@@ -313,9 +319,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
 
         // nan if stopped in gas
-        if(!std::isfinite(T3EnteringSil))
+        if(!std::isfinite(T3EnteringSil)){
+            hDistGas->Fill(srim->EvalDirect("light", T3Lab));
             continue;
-
+        }
         // First layer of silicons!
         // This func returns a pair of values: first = energy loss in silicon, second = energy after silicon
         auto [eLoss0, T3AfterSil0] {
@@ -396,6 +403,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             if(hitAssembly0 == 3)
                 hRPxEVertex3->Fill(vertex.X(), T3Recon);
 
+            if(hitAssembly0 == 4)
+                hRPxEVertex4->Fill(vertex.X(), T3Recon);
             // write to TTree
             Eex_tree = EexAfter;
             weight_tree = weight;
@@ -452,10 +461,17 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexAfter->Draw("hist");
     cAfter->cd(4);
     hKin->Draw("colz");
-    cAfter->cd(5);
+
+    auto* cNew {new TCanvas("cNew", "Various Histograms")};
+    cNew->DivideSquare(4);
+    cNew->cd(1);
+    hDistGas->Draw();
+    cNew->cd(2);
     hRPxEVertex->Draw("colz");
-    cAfter->cd(6);
+    cNew->cd(3);
     hRPxEVertex3->Draw("colz");
+    cNew->cd(4);
+    hRPxEVertex4->Draw("colz");
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());
