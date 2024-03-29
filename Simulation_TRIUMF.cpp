@@ -238,12 +238,12 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
         double randEx {rand->BreitWigner(0, 0.1)};
-        kingen.SetBeamEnergy(TBeam);
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         std::cout<<beamThreshold<<" "<<TBeam<<std::endl;
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
         }
+        kingen.SetBeamEnergyAndEx(TBeam, randEx);
         // std::cout<<"TBeam = "<<TBeam<<" MeV"<<'\n';
         // 3-> Run kinematics!
         // This is to be replaced by ActSim::Kinematics
@@ -251,7 +251,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // 3.2-> Build yourself the thetaCM and phiCM using uniform distrib
         // 3.3-> Set kinematics through SetRecoilKinematics(thetaCM, phiCM, 3, true)
         // in that call to function, 3 is the particle whose angle are being set; the light in this case
-        kingen.SetEx(randEx);
+        //kingen.SetEx(randEx);
         const double weight {1.};
         // focus on recoil 3 (light)
         // obtain thetas and energies
