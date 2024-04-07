@@ -342,17 +342,15 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         bool side1 {};
         ROOT::Math::XYZPoint silPoint1 {};
         double eLoss1 {};
-        double T3AfterSil1 {};
+        double T3AfterSil1 {-1};
         if(T3AfterSil0 > 0 && hitAssembly0 == 0)
         {
             // first, propagate in gas
             assemblyIndex = 1;
             runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, assemblyIndex, side1,
-            distance1,
-                                                          silType1, silIndex1, silPoint1, false);
+            distance1, silType1, silIndex1, silPoint1, false);
             if(silIndex1 == -1)
                 continue;
-        
             distance1 *= 10.;
             distance1 -= distance0; // distanceIntergas = distance1 - distance0
             T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
@@ -375,8 +373,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         if(cutPunchThrough) // fill histograms
         {
             // Here we go back in time! From sil energy after implementing all resolutions to Ex
-            auto T3Recon {runner.EnergyBeforeGas(eLoss0, distance0, "light")};
-            auto EexAfter {kingen.ReconstructExcitationEnergy(T3Recon, theta3Lab)};
+            auto T3Recon0 {runner.EnergyBeforeGas(eLoss0, distance0, "light")};
+            auto EexAfter {kingen.ReconstructExcitationEnergy(T3Recon0, theta3Lab)};
 
             // fill histograms
             hThetaCM->Fill(theta3CM * TMath::RadToDeg());
@@ -384,7 +382,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             hEexBefore->Fill(EexBefore, weight); // with the weight for each TGenPhaseSpace::Generate()
             hDistL0->Fill(distance0);
             hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss0);
-            hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
+            hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon0);
             hEexAfter->Fill(EexAfter, weight);
             // Here we fill the silicon point histograms
             // Note that some of them require to fill .X() or .Y() depending on their orientation
@@ -395,22 +393,54 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
                     
             // Debug histograms
             if(hitAssembly0 == 2)
-                hRPxEVertex->Fill(vertex.X(), T3Recon);
+                hRPxEVertex->Fill(vertex.X(), T3Recon0);
 
             if(hitAssembly0 == 3)
-                hRPxEVertex3->Fill(vertex.X(), T3Recon);
+                hRPxEVertex3->Fill(vertex.X(), T3Recon0);
 
             if(hitAssembly0 == 4)
-                hRPxEVertex4->Fill(vertex.X(), T3Recon);
+                hRPxEVertex4->Fill(vertex.X(), T3Recon0);
             // write to TTree
             Eex_tree = EexAfter;
             weight_tree = weight;
             theta3CM_tree = theta3CM * TMath::RadToDeg();
-            EVertex_tree = T3Recon;
+            EVertex_tree = T3Recon0;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             outTree->Fill();
         }
+
+        bool PunchthroughAndStop {T3AfterSil1 == 0.};
+        if(PunchthroughAndStop) // fill histograms
+        {
+            // Here we go back in time! From sil energy after implementing all resolutions to Ex
+            auto T3ReconAfterPunch {runner.EnergyBeforeGas(eLoss1, distance1, "light")};
+            auto T3Recon1 {runner.EnergyBeforeGas(eLoss1 + eLoss0, distance0, "light")};
+            auto EexAfter {kingen.ReconstructExcitationEnergy(T3Recon1, theta3Lab)};
+
+            // fill histograms
+            hThetaCM->Fill(theta3CM * TMath::RadToDeg());
+            hPhi->Fill(phi3Lab * TMath::RadToDeg());
+            hEexBefore->Fill(EexBefore, weight); // with the weight for each TGenPhaseSpace::Generate()
+            hDistL0->Fill(distance0);
+            hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss1 + eLoss0);
+            hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon1);
+            hEexAfter->Fill(EexAfter, weight);
+            // Here we fill the silicon point histograms
+
+            // write to TTree
+            Eex_tree = EexAfter;
+            weight_tree = weight;
+            theta3CM_tree = theta3CM * TMath::RadToDeg();
+            EVertex_tree = T3Recon1;
+            theta3Lab_tree = theta3Lab * TMath::RadToDeg();
+            outTree->Fill();
+            std::cout<<EexAfter<<std::endl;
+        }
+
     }
+    
+
+
     std::cout << "\r" << std::string(100 / percentPrint, '|') << 100 << "%";
     std::cout.flush();
     std::cout << RESET << '\n';
