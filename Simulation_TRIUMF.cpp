@@ -237,9 +237,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        double randEx {rand->BreitWigner(0, 0.1)};
+        double randEx {rand->BreitWigner(Ex, 0.1)};
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
-        std::cout<<beamThreshold<<" "<<TBeam<<std::endl;
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
         }
@@ -336,40 +335,38 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             continue;
         // 6-> Same but to silicon layer 1: SKIP THIS BECAUSE WE ARE NOT CONSIDERING PUNCHTHROUGH
         // // SILICON1
-        // double T3AfterInterGas {};
-        // double distance1 {};
-        // int silIndex1 {};
-        // int silType1 {};
-        // bool side1 {};
-        // ROOT::Math::XYZPoint silPoint1 {};
-        // double eLoss1 {};
-        // double T3AfterSil1 {};
-        // if(T3AfterSil0 > 0 && hitAssembly0 == 0)
-        // {
-        //     // first, propagate in gas
-        //     assemblyIndex = 1;
-        //     runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, assemblyIndex, side1,
-        //     distance1,
-        //                                                   silType1, silIndex1, silPoint1, false);
-        //     if(silIndex1 == -1)
-        //         continue;
-        //
-        //     distance1 *= 10.;
-        //     distance1 -= distance0; // distanceIntergas = distance1 - distance0
-        //     T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
-        //     if(!std::isfinite(T3AfterInterGas))
-        //         continue;
-        //
-        //     // now, silicon if we have energy left
-        //     if(T3AfterInterGas > 0)
-        //     {
-        //         auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
-        //                                                  thresholdSi1, "lightInSil", silResolution,
-        //                                                  stragglingInSil)};
-        //         eLoss1 = results.first;
-        //         T3AfterSil1 = results.second;
-        //     }
-        // }
+        double T3AfterInterGas {};
+        double distance1 {};
+        int silIndex1 {};
+        int silType1 {};
+        bool side1 {};
+        ROOT::Math::XYZPoint silPoint1 {};
+        double eLoss1 {};
+        double T3AfterSil1 {};
+        if(T3AfterSil0 > 0 && hitAssembly0 == 0)
+        {
+            // first, propagate in gas
+            assemblyIndex = 1;
+            runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, assemblyIndex, side1,
+            distance1,
+                                                          silType1, silIndex1, silPoint1, false);
+            if(silIndex1 == -1)
+                continue;
+        
+            distance1 *= 10.;
+            distance1 -= distance0; // distanceIntergas = distance1 - distance0
+            T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
+            if(!std::isfinite(T3AfterInterGas))
+                continue;
+        
+            // now, silicon if we have energy left
+            if(T3AfterInterGas > 0)
+            {
+                auto [eLoss1, T3AfterSil1] {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
+                                                         thresholdSi1, "lightInSil", silResolution,
+                                                         stragglingInSil)};
+            }
+        }
 
         // 7->
         // we are ready to reconstruct Eex with all resolutions implemented

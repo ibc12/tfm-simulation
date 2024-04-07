@@ -18,7 +18,7 @@ void BuildTRIUMFGeo(bool draw = true)
     double silicon1Y {8. / 2};
     double silicon1Z {5.0 / 2};
     // unit silicon size side type
-    double silicon2X {5.0E-2 / 2}; // cm
+    double silicon2X {1.5E-1 / 2}; // cm
     double silicon2Y {5. / 2};
     double silicon2Z {5.0 / 2};    
     ActSim::SilUnit silUnit1(0, silicon1X, silicon1Y, silicon1Z);
