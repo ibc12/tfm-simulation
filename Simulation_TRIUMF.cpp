@@ -272,7 +272,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
-            auto theta3CM {TMath::Pi() - kingen.ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
+        auto theta3CM {TMath::Pi() - kingen.ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         // std::cout<<"Theta3Lab = "<<theta3Lab * TMath::RadToDeg()<<" degree"<<'\n';
         // std::cout<<"Theta3New = "<<psGenerator.GetThetaFromTLorentzVector(PLight) * TMath::RadToDeg()<<'\n';
         // auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -343,6 +343,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         ROOT::Math::XYZPoint silPoint1 {};
         double eLoss1 {};
         double T3AfterSil1 {-1};
+        bool isPunch {};
         if(T3AfterSil0 > 0 && hitAssembly0 == 0)
         {
             // first, propagate in gas
@@ -363,6 +364,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
                 auto [eLoss1, T3AfterSil1] {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
                                                          thresholdSi1, "lightInSil", silResolution,
                                                          stragglingInSil)};
+                isPunch = true;
             }
         }
 
