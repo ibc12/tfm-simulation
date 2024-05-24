@@ -22,7 +22,7 @@ void merger()
 {
     ROOT::EnableImplicitMT();
 
-    double T1 {7.5};
+    double T1 {5.5};
     std::vector<double> Exs {0., 0.130, 0.435};
 
  // Construct the output folder path based on T1 with fixed precision
@@ -48,8 +48,6 @@ void merger()
     double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
     double Np {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double Nit {1.e6};
-    double xs {4 * TMath::Pi() *
-               1e-27}; // not computed here, should be obtained from XSSampler as the absolute xs -> ~ 1 mbarn
 
     // Set histogram
     int nbins {200};

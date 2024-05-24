@@ -138,6 +138,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hRPxEVertex3->SetTitle("Side Left");
     auto* hRPxEVertex4 {(TH2D*)hRPxEVertex->Clone("hRPxEVertex4")};
     hRPxEVertex4->SetTitle("Side Right");
+    auto* hDeltaE0 {new TH2D{"hDeltaE0", "Entrance;T3EnteringSil [MeV];#DeltaE_{0} [MeV]", 200, 0, 40, 150, 0, 40}};
+    hDeltaE0->SetTitle("#DeltaE assembly 0");
+    auto* hDeltaE1 {(TH1F*)hDeltaE0->Clone("hDeltaE1")};
+    hDeltaE1->SetTitle("#DeltaE assembly 1");
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -259,7 +263,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         double phi3CM {rand -> Uniform(0, 2 * TMath::Pi())};
         double theta3CMBefore {xs->Sample(rand->Uniform())};
 
-        kingen.ComputeRecoilKinematics(theta3CMBefore, phi3CM, 3, false);
+        kingen.ComputeRecoilKinematics(theta3CMBefore*TMath::DegToRad(), phi3CM, 3, false);
 
         // 3.4-> The you have the kinematics in the lab by just calling the getters: GetTheta3Lab(), GetT3Lab(), etc
         auto phi3Lab {kingen.GetPhi3Lab()};
@@ -312,6 +316,16 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
             continue;
         }
+        // obtain normal direction of pad plane that was hit, to obtain then length travelled in the silicon
+        double cosAngleInSilicon {};
+        if(hitAssembly0 == 0 || hitAssembly0 == 1 || hitAssembly0 == 2){
+            ROOT::Math::XYZVector normalToPadPlane {1, 0, 0};
+            cosAngleInSilicon = std::abs(normalToPadPlane.Dot(direction.Unit())); // always positive, distance in silicon is positive
+        }
+        else{
+            ROOT::Math::XYZVector normalToPadPlane  {0, 1, 0};
+            cosAngleInSilicon = std::abs(normalToPadPlane.Dot(direction.Unit()));
+        }
         // Moving from ActSim::Geometry reference frame to ACTAR standard frame: (0, 0) = (padx = 0, pady = 0)
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
 
@@ -329,14 +343,15 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // First layer of silicons!
         // This func returns a pair of values: first = energy loss in silicon, second = energy after silicon
         auto [eLoss0, T3AfterSil0] {
-            runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10., thresholdSi0,
+            runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10 / cosAngleInSilicon, thresholdSi0,
                                        "lightInSil", silResolution, stragglingInSil)};
-        // does not consider angle of track in silicons... we will have to modify it to do so
-
+        // fill histogram of eLoss0
+        hDeltaE0->Fill(T3EnteringSil, eLoss0);
         // nan if bellow threshold (experimental sil detectors have a threshold energy below which particles are not
         // detected)
         if(!std::isfinite(eLoss0))
             continue;
+
         // 6-> Same but to silicon layer 1: SKIP THIS BECAUSE WE ARE NOT CONSIDERING PUNCHTHROUGH
         // // SILICON1
         double T3AfterInterGas {};
@@ -365,7 +380,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             // now, silicon if we have energy left
             if(T3AfterInterGas > 0)
             {
-                auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
+                auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10. / cosAngleInSilicon,
                                                          thresholdSi1, "lightInSil", silResolution, stragglingInSil)};
                 eLoss1 = results.first;
                 T3AfterSil1 = results.second;
@@ -402,6 +417,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss0);
             hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
+            hDeltaE1->Fill(T3AfterInterGas, eLoss1);
             // Here we fill the silicon point histograms
             // Note that some of them require to fill .X() or .Y() depending on their orientation
             if(hitAssembly0 == 0 || hitAssembly0 == 1 || hitAssembly0 == 2)
@@ -480,6 +496,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexAfter->Draw("hist");
     cAfter->cd(4);
     hKin->Draw("colz");
+    cAfter->cd(5);
+    hDeltaE0->Draw("colz");
+    cAfter->cd(6);
+    hDeltaE1->Draw("colz");
 
     auto* cNew {new TCanvas("cNew", "Various Histograms")};
     cNew->DivideSquare(4);
@@ -491,6 +511,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hRPxEVertex3->Draw("colz");
     cNew->cd(4);
     hRPxEVertex4->Draw("colz");
+
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());

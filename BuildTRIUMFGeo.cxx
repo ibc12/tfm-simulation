@@ -14,7 +14,7 @@ void BuildTRIUMFGeo(bool draw = true)
     double driftZ {25.6 / 2};
     ActSim::DriftChamber actar(driftX, driftY, driftZ);
     // unit silicon size front type
-    double silicon1X {5.0E-2 / 2}; // cm
+    double silicon1X {15.0E-2 / 2}; // cm
     double silicon1Y {8. / 2};
     double silicon1Z {5.0 / 2};
     // unit silicon size side type
