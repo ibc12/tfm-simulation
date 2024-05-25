@@ -42,6 +42,28 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
     Init();
 }
 
+double ActPhysics::CrossSection::xsInterval(const TString& file, double minAngle, double maxAngle) 
+{
+    std::ifstream streamer {file};
+    if(!streamer)
+        throw std::runtime_error("CrossSection::ReadData(): could not open input file named " + file);
+
+    double angle {};
+    double xs {};
+    double xsIntervalValue {};    
+    while(streamer >> angle >> xs)
+    {
+        // Only process the data if the angle is within the specified range
+        if (angle >= minAngle && angle <= maxAngle)
+        {
+            xsIntervalValue += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
+        }
+    }
+    streamer.close();
+    // Once data is read, initialize our object
+    return xsIntervalValue;
+}
+
 void ActPhysics::CrossSection::Init()
 {
     // Initialize the object after reading file, it returns the CDF

@@ -18,7 +18,7 @@
 
 #include <string>
 #include <vector>
-void merger()
+void merger_Intervals()
 {
     ROOT::EnableImplicitMT();
 
@@ -48,73 +48,84 @@ void merger()
     double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
     double Np {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double Nit {1.e6};
-    double xs {4 * TMath::Pi() *
-               1e-27}; // not computed here, should be obtained from XSSampler as the absolute xs -> ~ 1 mbarn
     //Intervals for merge
-    double upper_limits[4] {70, 90, 110, 130};
-    double lower_limits[4] {50, 70, 90, 110};
+    double upper_limits[1] {70};
+    double lower_limits[1] {50};
     // Set histogram
     int nbins {200};
     double xmin1 {-1};
     double xmax1 {2};
-    auto* hEx {new TH1D {
-        "hEx", TString::Format("Ex for all peaks;E_{x} [MeV];Counts / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
-        xmin1, xmax1}};
-    hEx->Sumw2();
+
     double ymin {0};
     double ymax {40};
     double xmin2 {0};
     double xmax2 {180};
-    auto* hKin {new TH2D {
-        "hKin", "Kinematics for all E_{x};Theta_{Lab} [degree];E_{Lab} [MeV]", nbins,
-        xmin2, xmax2, nbins, ymin, ymax}};
-    hKin->Sumw2();
-    std::vector<TH1D*> hs1;
-    std::vector<TH2D*> hs2;
+
+    double theta_up {70.};
+    double theta_low {50.};
+
+    auto* canvas {new TCanvas("canvas", "Ex for diferent theta intervals")};
+    canvas->DivideSquare(4);
+
     for(int i = 0; i < 4; i++){
+        std::vector<TH1D*> hs1;
+
+        auto* hEx {new TH1D {
+        "hEx", TString::Format("Ex for all peaks;E_{x} [MeV];Counts / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
+        xmin1, xmax1}};
+        hEx->Sumw2();
+
+        int contador {0};
         for(auto& df : dfs)
         {
-            int contador {0};
+            
             double Ex = Exs[contador];
             auto* xs {new ActPhysics::CrossSection()};
+            double intervalXS {};
             if(Ex == 0)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
-                xs->ReadData(data_to_read);
+                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
             }
             else if(Ex == 0.130)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
-                xs->ReadData(data_to_read);
+                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
             }
             else if(Ex == 0.435)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
-                xs->ReadData(data_to_read);
+                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
             }
 
-            double totalXS {xs->GetTotalXScm()};
+            
             // compute scaling factor
-            double scaling {(Nt * Np * totalXS) / Nit};
+            double scaling {(Nt * Np * intervalXS) / Nit};
             // Get temporary histogram
-            auto h1 {df.Histo1D(
-                {"h1", "Ex in for loop", hEx->GetNbinsX(), hEx->GetXaxis()->GetXmin(), hEx->GetXaxis()->GetXmax()}, "Eex")};
-            h1->Scale(scaling);
-            hEx->Add(h1.GetPtr());
-            hs1.push_back((TH1D*)h1->Clone());
+            auto str {TString::Format("%f <= theta3Lab && theta3Lab < %f", theta_low, theta_up)};
+            // %f indicates that you are formating a float
+            // Create a node: a copy of the RDF with custom cuts, new columns, etc
+            auto node {df.Filter(str.Data())}; // this filters all the columns,
+            // storing in the variable named node only the entries that fullfil the condition
+            // You have to use the .Data() method of the TString str bc the Filter method does not allow
+            // a TString argument. .Data() converts to a old-C char* type (cousas técnicas, con saber que a próxima vez
+            // telo que facer así xa chega :)
+            // And now get your histogram as usual (ofc using the node variable)
+            auto count = node.Count();
+            std::cout << "Number of elements in node: " << *count << std::endl;
 
-            auto h2 {df.Histo2D(
-                {"h2", "Kinematics in for loop", hKin->GetNbinsX(), hKin->GetXaxis()->GetXmin(), hKin->GetXaxis()->GetXmax(), 
-                    hKin->GetNbinsY(), hKin->GetYaxis()->GetXmin(), hKin->GetYaxis()->GetXmax()}, "theta3Lab", "EVertex")};
-            h2->Scale(scaling);
-            hKin->Add(h2.GetPtr());
-            hs2.push_back((TH2D*)h2->Clone());
+            auto hInner {node.Histo1D(
+                {"h", str, hEx->GetNbinsX(), hEx->GetXaxis()->GetXmin(), hEx->GetXaxis()->GetXmax()}, "Eex")};
+            // and push back (best idea is to store in the vector the clone of the temp histogram hInner)
+            hInner->Scale(scaling);
+            hEx->Add(hInner.GetPtr());
+            hs1.push_back((TH1D*)hInner->Clone());
 
             contador += 1;
         }
 
         // plot
-        auto* c0 {new TCanvas {"c0", "Merger canvas 1D"}};
+        canvas->cd(i+1);
         gStyle->SetOptStat(0);
         hEx->SetLineWidth(2);
         hEx->Draw("histe");
@@ -124,13 +135,13 @@ void merger()
         leg1->SetHeader("E_{x} [MeV]");
         leg1->SetBorderSize(0);
         leg1->SetFillStyle(0);
-        for(int i = 0; i < hs1.size(); i++)
+        for(int j = 0; j < hs1.size(); j++)
         {
-            hs1[i]->SetLineColor(colors[i]);
-            hs1[i]->SetLineStyle(kDashed);
-            hs1[i]->SetLineWidth(2);
-            leg1->AddEntry(hs1[i], labels[i].c_str());
-            hs1[i]->Draw("hist same");
+            hs1[j]->SetLineColor(colors[j]);
+            hs1[j]->SetLineStyle(kDashed);
+            hs1[j]->SetLineWidth(2);
+            leg1->AddEntry(hs1[j], labels[j].c_str());
+            hs1[j]->Draw("hist same");
         }
         leg1->Draw();
 
@@ -138,15 +149,7 @@ void merger()
         auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
         latex->Draw();
 
-        auto* c1 {new TCanvas {"c1", "Merger canvas 2D"}};
-        hKin->Draw("colz");
-        auto* leg2 {new TLegend {0.2, 0.2}};
-        leg2->SetHeader("E_{x} [MeV]");
-        leg2->SetBorderSize(0);
-        leg2->SetFillStyle(0);
-        for(int i = 0; i < hs2.size(); i++)
-        {
-            leg2->AddEntry(hs2[i], labels[i].c_str());
-        }
+        theta_up += 20.;
+        theta_low += 20.;
     }
 }

@@ -24,6 +24,7 @@ namespace ActPhysics
     public:
         void ReadData(const std::string& file);
         void ReadData(const TString& file);
+        double xsInterval(const TString& file, double minAngle, double maxAngle);
         void Draw() const;
         double Sample(const double angle);
         void Theo();
