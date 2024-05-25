@@ -15,7 +15,7 @@ void ActPhysics::CrossSection::ReadData(const std::string& file)
     double xs {};
     while(streamer >> angle >> xs)
     {
-        fAngleData.push_back(angle);
+        fAngleData.push_back(angle * TMath::DegToRad());
         fXSData.push_back(xs);
         fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }
@@ -33,7 +33,7 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
     double xs {};
     while(streamer >> angle >> xs)
     {
-        fAngleData.push_back(angle);
+        fAngleData.push_back(angle * TMath::DegToRad());
         fXSData.push_back(xs);
         fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }

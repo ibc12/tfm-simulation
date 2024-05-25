@@ -67,9 +67,10 @@ void merger()
     hKin->Sumw2();
     std::vector<TH1D*> hs1;
     std::vector<TH2D*> hs2;
+
+    int contador {0};
     for(auto& df : dfs)
     {
-        int contador {0};
         double Ex = Exs[contador];
         auto* xs {new ActPhysics::CrossSection()};
         if(Ex == 0)
@@ -106,6 +107,8 @@ void merger()
         hs2.push_back((TH2D*)h2->Clone());
 
         contador += 1;
+
+        delete xs;
     }
 
     // plot

@@ -27,7 +27,7 @@ namespace ActPhysics
         void Draw() const;
         double Sample(const double angle);
         void Theo();
-        double GetTotalXSmbarn() const { return fTotalXS; }
+        double GetTotalXSmbarn() { return fTotalXS; }
         double GetTotalXScm() const { return fTotalXS * 1e-27; }
 
     private:

@@ -109,11 +109,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hThetaCM {new TH1F("hThetaCM", "ThetaCM;#theta_{CM} [degree]", 720, 0., 180.)};
     auto* hThetaCMAll {(TH1F*)hThetaCM->Clone("hThetaCMAll")};
     hThetaCMAll->SetTitle("All thetaCM");
+    auto* hThetaLabAll {(TH1F*)hThetaCM->Clone("hThetaLabAll")};
+    hThetaLabAll->SetTitle("All thetaLab");
     auto* hThetaLabDebug {(TH1F*)hThetaCM->Clone("hThetaLabDebug")};
     hThetaLabDebug->SetTitle("Theta discriminated in layer 0;#theta_{Lab} [degree]");
     auto* hDistL0 {new TH1F("hDistL0", "Distance vertex to L0;dist [mm]", 300, 0., 600.)};
     auto* hDistGas {(TH1F*)hDistL0->Clone("hDistGas")};
-    hThetaCMAll->SetTitle("Dist in Stopped gas particles");
+    hThetaCMAll->SetTitle("ThetaCM after kin and after cuts");
     auto* hThetaESil {new TH2F("hThetaELab", "Theta vs Energy in Sil0;#theta_{LAB} [degree];E_{Sil0} [MeV]", 140, 0.,
                                180., 100, 0., 60.)};
     auto* hThetaEVertex {(TH2F*)hThetaESil->Clone("hThetaEVertex")};
@@ -142,7 +144,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hDeltaE0->SetTitle("#DeltaE assembly 0");
     auto* hDeltaE1 {(TH1F*)hDeltaE0->Clone("hDeltaE1")};
     hDeltaE1->SetTitle("#DeltaE assembly 1");
-
+    // Histograms just after kinematics
+    auto* hThetaCMThetaLab {new TH2D{"hThetaCMThetaLab", "ThetaCM vs ThetaLab; #theta_{Lab} [deg]; #theta_{CM} [deg]", 180, 0, 180, 180, 0, 180}};
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
@@ -158,7 +161,6 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // Random generator
     auto* rand {new TRandom3()};
     rand->SetSeed(); // random path in each execution of macro
-
     // Cross section sampler
     // Cross section depends on excitation energy state
     auto* xs {new ActPhysics::CrossSection()};
@@ -242,7 +244,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        double randEx {rand->BreitWigner(Ex, 0.1)};
+        // double randEx {rand->BreitWigner(Ex, 0.1)};
+        double randEx = Ex;
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
@@ -261,18 +264,20 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // obtain thetas and energies
 
         double phi3CM {rand -> Uniform(0, 2 * TMath::Pi())};
-        double theta3CMBefore {xs->Sample(rand->Uniform())};
+        double theta3CMBefore {(xs->Sample(rand->Uniform()))}; // sample in rads
 
-        kingen.ComputeRecoilKinematics(theta3CMBefore*TMath::DegToRad(), phi3CM, 3, false);
+        kingen.ComputeRecoilKinematics(theta3CMBefore, phi3CM, 3, false);
 
         // 3.4-> The you have the kinematics in the lab by just calling the getters: GetTheta3Lab(), GetT3Lab(), etc
         auto phi3Lab {kingen.GetPhi3Lab()};
         auto theta3Lab {kingen.GetTheta3Lab()};
         auto T3Lab {kingen.GetT3Lab()};
 
+        hThetaLabAll->Fill(theta3Lab * TMath::RadToDeg());
+        hThetaCMThetaLab->Fill(theta3Lab * TMath::RadToDeg(), theta3CMBefore*TMath::RadToDeg());
         hKin->Fill(theta3Lab * TMath::RadToDeg(), T3Lab);
         // to compute geometric efficiency by CM interval and with our set reference direction
-        hThetaCMAll->Fill(theta3CMBefore);
+        hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
         hPhiAll->Fill(phi3Lab * TMath::RadToDeg());
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
@@ -512,6 +517,18 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     cNew->cd(4);
     hRPxEVertex4->Draw("colz");
 
+    auto* cNoCut {new TCanvas("cNoCut", "Histograms just after getting the kinematics")};
+    cNoCut->DivideSquare(4);
+    cNoCut->cd(1);
+    hThetaCMThetaLab->Draw("colz");
+    cNoCut->cd(2);
+    hThetaLabDebug->Draw("colz");
+    cNoCut->cd(3);
+    hThetaLabAll->Draw("colz");
+    cNoCut->cd(4);
+    hThetaCMAll->Draw();
+    xs->Theo();
+
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());
@@ -534,6 +551,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     delete geometry;
     delete srim;
     delete rand;
+    delete xs;
     if(!standalone)
     {
         delete cSP;
