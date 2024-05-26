@@ -22,7 +22,7 @@ void merger_Intervals()
 {
     ROOT::EnableImplicitMT();
 
-    double T1 {5.5};
+    double T1 {7.5};
     std::vector<double> Exs {0., 0.130, 0.435};
 
  // Construct the output folder path based on T1 with fixed precision
@@ -64,15 +64,17 @@ void merger_Intervals()
     double theta_up {70.};
     double theta_low {50.};
 
-    auto* canvas {new TCanvas("canvas", "Ex for diferent theta intervals")};
+    auto* canvas {new TCanvas("canvas", TString::Format("Ex for diferent theta intervals at E_{beam} = %.1fMeV", T1))};
     canvas->DivideSquare(4);
+
+    std::vector<TH1D*> hExs;
 
     for(int i = 0; i < 4; i++){
         std::vector<TH1D*> hs1;
 
         auto* hEx {new TH1D {
-        "hEx", TString::Format("Ex for all peaks;E_{x} [MeV];Counts / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
-        xmin1, xmax1}};
+        TString::Format("hEx %.0f-%.0f", theta_low, theta_up), TString::Format("Exs \\ \\theta_{Lab} \\in (%.0f , %.0f) [deg];E_{x} [MeV];Counts / %.0f keV", 
+        theta_low, theta_up, (xmax1 - xmin1) / nbins * 1000), nbins,xmin1, xmax1}};
         hEx->Sumw2();
 
         int contador {0};
@@ -85,17 +87,17 @@ void merger_Intervals()
             if(Ex == 0)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
-                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
+                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
             }
             else if(Ex == 0.130)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
-                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
+                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
             }
             else if(Ex == 0.435)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
-                double intervalXS {xs->xsInterval(data_to_read, theta_low, theta_up)};
+                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
             }
 
             
@@ -111,8 +113,6 @@ void merger_Intervals()
             // a TString argument. .Data() converts to a old-C char* type (cousas técnicas, con saber que a próxima vez
             // telo que facer así xa chega :)
             // And now get your histogram as usual (ofc using the node variable)
-            auto count = node.Count();
-            std::cout << "Number of elements in node: " << *count << std::endl;
 
             auto hInner {node.Histo1D(
                 {"h", str, hEx->GetNbinsX(), hEx->GetXaxis()->GetXmin(), hEx->GetXaxis()->GetXmax()}, "Eex")};
@@ -122,7 +122,12 @@ void merger_Intervals()
             hs1.push_back((TH1D*)hInner->Clone());
 
             contador += 1;
+
+            if(contador == 2){
+                hExs.push_back(hEx);
+            }
         }
+
 
         // plot
         canvas->cd(i+1);
@@ -152,4 +157,5 @@ void merger_Intervals()
         theta_up += 20.;
         theta_low += 20.;
     }
+
 }
