@@ -22,7 +22,7 @@ void merger_Intervals()
 {
     ROOT::EnableImplicitMT();
 
-    double T1 {7.5};
+    double T1 {5.5};
     std::vector<double> Exs {0., 0.130, 0.435};
 
  // Construct the output folder path based on T1 with fixed precision
@@ -87,17 +87,17 @@ void merger_Intervals()
             if(Ex == 0)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
-                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
+                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
             }
             else if(Ex == 0.130)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
-                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
+                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
             }
             else if(Ex == 0.435)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
-                intervalXS = xs->xsInterval(data_to_read, theta_low, theta_up);
+                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
             }
 
             

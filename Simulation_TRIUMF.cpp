@@ -63,7 +63,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // Center in Y
     const double yVertexMean {128.};
     const double yVertexSigma {4};
-
+    // Center of ACTAR
+    ROOT::Math::XYZPoint vertexCentre (0,0,0); // Centre of ACTAR to compare with fixed target
     // THRESHOLDS FOR SILICONS
     // Minimum energy deposit to be detected in Sil
     const double thresholdSi0 {1.};
@@ -246,8 +247,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        // double randEx {rand->BreitWigner(Ex, 0.1)};
-        double randEx = Ex;
+        double randEx {rand->BreitWigner(Ex, 0.1)};
+        // double randEx = Ex;
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
@@ -414,8 +415,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         bool cuts {EBefSil0 != -1};
         if(cuts) // fill histograms
         {
+            auto distCentre {(vertexCentre - silPoint0).R()}; // Use to compare with fixed target
             // Here we go back in time! From sil energy after implementing all resolutions to Ex
-            auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")};
+            auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")}; // distance0 for normal simulation
             auto EexAfter {kingen.ReconstructExcitationEnergy(T3Recon, theta3Lab)};
 
             // fill histograms

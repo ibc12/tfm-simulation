@@ -42,7 +42,7 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
     Init();
 }
 
-double ActPhysics::CrossSection::xsInterval(const TString& file, double minAngle, double maxAngle) 
+double ActPhysics::CrossSection::xsIntervalcm(const TString& file, double minAngle, double maxAngle) 
 {
     std::ifstream streamer {file};
     if(!streamer)
@@ -61,7 +61,7 @@ double ActPhysics::CrossSection::xsInterval(const TString& file, double minAngle
     }
     streamer.close();
     // Once data is read, initialize our object
-    return xsIntervalValue;
+    return xsIntervalValue * 1e-27;
 }
 
 void ActPhysics::CrossSection::Init()
