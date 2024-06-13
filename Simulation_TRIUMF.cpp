@@ -70,6 +70,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
 
+    //THRESHOLD FOR L1 DETECTION
+    const double thresholdL1 {20.}; // mm 
+
     // NAME OF OUTPUT FILE
     TString fileName {
         TString::Format("./Outputs/%.1fMeV/transfer_TRIUMF_Eex_%.3f_nPS_%d_pPS_%d.root", T1, Ex, neutronPS, protonPS)};
@@ -114,6 +117,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hThetaLabAll->SetTitle("All thetaLab");
     auto* hThetaLabDebug {(TH1F*)hThetaCM->Clone("hThetaLabDebug")};
     hThetaLabDebug->SetTitle("Theta discriminated in layer 0;#theta_{Lab} [degree]");
+    auto* hThetaLabL1 {(TH1F*)hThetaCM->Clone("hThetaLabL1")};
+    hThetaLabL1->SetTitle("Theta for L1 trigger;#theta_{Lab} [degree]");
     auto* hThetaCMDebug {(TH1F*)hThetaLabDebug->Clone("hThetaCMDebug")};
     hThetaCMDebug->SetTitle("Theta discriminated in layer 0;#theta_{CM} [degree]");
     auto* hDistL0 {new TH1F("hDistL0", "Distance vertex to L0;dist [mm]", 300, 0., 600.)};
@@ -248,7 +253,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
         double randEx {rand->BreitWigner(Ex, 0.1)};
-        // double randEx = Ex;
+        //double randEx = Ex;
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
@@ -324,6 +329,20 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         if(silIndex0 == -1)
         {
             hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
+
+            double rangeInGas {srim->EvalDirect("light", T3Lab)};
+            ROOT::Math::XYZPoint finalPointGas {vertex + rangeInGas * direction.Unit()};
+            if(-128 <= finalPointGas.X() <= 128 && -128 <= finalPointGas.Y() <= 128 && -128 <= finalPointGas.Z() <= 128)
+            {
+                double distanceXY {TMath::Sqrt(pow(vertex.X() - finalPointGas.X(),2) + pow(vertex.Y() - finalPointGas.Y(),2))};
+
+                if(distanceXY >= thresholdL1)
+                {
+                    hThetaLabL1->Fill(theta3Lab * TMath::RadToDeg());
+                    
+                }
+            }
+
             continue;
         }
         // obtain normal direction of pad plane that was hit, to obtain then length travelled in the silicon
@@ -415,7 +434,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         bool cuts {EBefSil0 != -1};
         if(cuts) // fill histograms
         {
-            auto distCentre {(vertexCentre - silPoint0).R()}; // Use to compare with fixed target
+            auto distCentre {(vertexCentre - silPoint0).R()*10}; // Use to compare with fixed target
             // Here we go back in time! From sil energy after implementing all resolutions to Ex
             auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")}; // distance0 for normal simulation
             auto EexAfter {kingen.ReconstructExcitationEnergy(T3Recon, theta3Lab)};
@@ -492,6 +511,12 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hPhiAll->Draw();
     hPhi->SetLineColor(kRed);
     hPhi->Draw("sames");
+
+    // plots for L1 trigger
+    auto* cL1 {new TCanvas{"cL1", "Graphs for L1 trigger"}};
+    cL1->DivideSquare(4);
+    cL1->cd(1);
+    hThetaLabL1->Draw();
 
     // draw theoretical kinematics
     ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
@@ -570,6 +595,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         delete hThetaCM;
         delete hThetaCMAll;
         delete hThetaLabDebug;
+        delete hThetaLabL1;
         delete hDistL0;
         delete hThetaESil;
         delete hThetaEVertex;

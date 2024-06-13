@@ -13,6 +13,8 @@
 #include "TString.h"
 #include "TStyle.h"
 #include "TVirtualPad.h"
+#include "TF1.h"
+#include "TVirtualFitter.h"
 
 #include "ActCrossSection.cxx"
 
@@ -20,9 +22,12 @@
 #include <vector>
 void merger()
 {
+    ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
+
+
     ROOT::EnableImplicitMT();
 
-    double T1 {5.5};
+    double T1 {7.5};
     std::vector<double> Exs {0., 0.130, 0.435};
 
  // Construct the output folder path based on T1 with fixed precision
@@ -111,12 +116,52 @@ void merger()
         delete xs;
     }
 
+    auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [2], [6])  + [7] * TMath::Voigt(x - [8], [2], [9]) ", -2, 2}};
+    f->SetParameters(150, 0, 0.07, 0.1, 250, 0.13, 0.1, 140, 0.4, 0.1);
+    //f->FixParameter(1, 0);
+    // f->FixParameter(5, 0.130);
+    // f->FixParameter(9, 0.435);
+    f->SetParLimits(0, 10, 350);
+    f->SetParLimits(3, 0.05, 0.5);
+    f->SetParLimits(4, 10, 350);
+    f->SetParLimits(6, 0.05, 0.5);
+    f->SetParLimits(7, 10, 350);
+    f->SetParLimits(9, 0.05, 0.5);
+
+    hEx->Fit(f, "0M+I10000");
+    
+    auto* fGS {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+    double* paramsGS = f->GetParameters();
+    fGS->SetParameters(paramsGS);
+    auto* f1st {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+    double params1st[4];
+    params1st[0] = f->GetParameter(4);
+    params1st[1] = f->GetParameter(5);
+    params1st[2] = f->GetParameter(2);
+    params1st[3] = f->GetParameter(6);
+    f1st->SetParameters(params1st);
+    auto* f2nd {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+    double params2nd[4];
+    params2nd[0] = f->GetParameter(7);
+    params2nd[1] = f->GetParameter(8);
+    params2nd[2] = f->GetParameter(2);
+    params2nd[3] = f->GetParameter(9);
+    f2nd->SetParameters(params2nd);
+
     // plot
+    std::vector<int> colors {6, 8, 46};
     auto* c0 {new TCanvas {"c0", "Merger canvas 1D"}};
     gStyle->SetOptStat(0);
     hEx->SetLineWidth(2);
     hEx->Draw("histe");
-    std::vector<int> colors {6, 8, 46};
+    f->Draw("same");
+    fGS->SetLineColor(colors[0]);
+    fGS->Draw("same");
+    f1st->SetLineColor(colors[1]);
+    f1st->Draw("same");
+    f2nd->SetLineColor(colors[2]);
+    f2nd->Draw("same");
+    //hEx->SaveAs("hit_merger_Exs.root");
     std::vector<std::string> labels {"0", "0.130", "0.435"};
     auto* leg1 {new TLegend {0.2, 0.2}};
     leg1->SetHeader("E_{x} [MeV]");
