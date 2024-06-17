@@ -128,6 +128,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
                                180., 100, 0., 60.)};
     auto* hThetaEVertex {(TH2F*)hThetaESil->Clone("hThetaEVertex")};
     hThetaEVertex->SetTitle("Theta vs EVertex; #theta [degree];E_{Vertex} [MeV]");
+    auto* hThetaVertexInGas {new TH2F("hThetaVertexInGas", "Theta vs Stopping point Vertex (X); #theta [degree];X_{vertex} [mm]", 140, 0.,
+                               180., 256, 0., 256.)};
+    auto* hRangeGas {(TH1F*)hDistL0->Clone("hRangeGas; Range [mm]")};    
+    hThetaCMAll->SetTitle("Range in gas (particles that stop in)");                  
     auto* hKin {(TH2F*)hThetaESil->Clone("hKin")};
     hKin->SetTitle("Debug LAB kin;#theta_{Lab} [deg];E");
     auto* hSilPoint {new TH2F("hSilPoint", "Silicon point;X or Y [mm];Z [mm]", 100, -10., 290., 100, -10., 290.)};
@@ -252,8 +256,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        double randEx {rand->BreitWigner(Ex, 0.1)};
-        //double randEx = Ex;
+        //double randEx {rand->BreitWigner(Ex, 0.1)};
+        double randEx = Ex;
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
@@ -325,24 +329,25 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
         distance0 *= 10.;
 
+        // Threshold L1, particles that stop in actar
+        double rangeInGas {srim->EvalDirect("light", T3Lab)};
+        ROOT::Math::XYZPoint finalPointGas {vertex + rangeInGas * direction.Unit()};
+        if(0 <= finalPointGas.X() && finalPointGas.X() <= 256 && 0 <= finalPointGas.Y() && finalPointGas.Y() <= 256 && 0 <= finalPointGas.Z() && finalPointGas.Z() <= 256)
+        {
+            double distanceXY {TMath::Sqrt(pow(vertex.X() - finalPointGas.X(),2) + pow(vertex.Y() - finalPointGas.Y(),2))};
+            if(distanceXY >= 0)
+            {
+                // std::cout<<rangeInGas<<std::endl;
+                hThetaLabL1->Fill(theta3Lab * TMath::RadToDeg());
+                hThetaVertexInGas->Fill(theta3Lab * TMath::RadToDeg(), vertex.X());
+                hRangeGas->Fill(rangeInGas);
+            }
+        }
+
         // skip tracks that doesn't reach silicons or are in silicon index cut
         if(silIndex0 == -1)
         {
             hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
-
-            double rangeInGas {srim->EvalDirect("light", T3Lab)};
-            ROOT::Math::XYZPoint finalPointGas {vertex + rangeInGas * direction.Unit()};
-            if(-128 <= finalPointGas.X() <= 128 && -128 <= finalPointGas.Y() <= 128 && -128 <= finalPointGas.Z() <= 128)
-            {
-                double distanceXY {TMath::Sqrt(pow(vertex.X() - finalPointGas.X(),2) + pow(vertex.Y() - finalPointGas.Y(),2))};
-
-                if(distanceXY >= thresholdL1)
-                {
-                    hThetaLabL1->Fill(theta3Lab * TMath::RadToDeg());
-                    
-                }
-            }
-
             continue;
         }
         // obtain normal direction of pad plane that was hit, to obtain then length travelled in the silicon
@@ -517,6 +522,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     cL1->DivideSquare(4);
     cL1->cd(1);
     hThetaLabL1->Draw();
+    cL1->cd(2);
+    hThetaVertexInGas->Draw("colz");
+    cL1->cd(3);
+    hRangeGas->Draw();
 
     // draw theoretical kinematics
     ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
@@ -592,9 +601,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         delete cSP;
         delete cAfter;
         delete cBefore;
+        delete cL1;
+        delete cNoCut;
+        delete cNew;
         delete hThetaCM;
         delete hThetaCMAll;
         delete hThetaLabDebug;
+        delete hThetaVertexInGas;
         delete hThetaLabL1;
         delete hDistL0;
         delete hThetaESil;

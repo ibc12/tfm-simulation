@@ -22,7 +22,7 @@ void merger_Intervals()
 {
     ROOT::EnableImplicitMT();
 
-    double T1 {5.5};
+    double T1 {7.5};
     std::vector<double> Exs {0., 0.130, 0.435};
 
  // Construct the output folder path based on T1 with fixed precision
