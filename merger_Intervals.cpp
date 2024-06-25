@@ -20,6 +20,9 @@
 #include <vector>
 void merger_Intervals()
 {
+
+    ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
+
     ROOT::EnableImplicitMT();
 
     double T1 {7.5};
@@ -48,28 +51,26 @@ void merger_Intervals()
     double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
     double Np {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double Nit {1.e6};
-    //Intervals for merge
-    double upper_limits[1] {70};
-    double lower_limits[1] {50};
+
     // Set histogram
-    int nbins {200};
-    double xmin1 {-1};
-    double xmax1 {2};
+    int nbins {40};
+    double xmin1 {-0.6};
+    double xmax1 {1};
 
     double ymin {0};
     double ymax {40};
     double xmin2 {0};
     double xmax2 {180};
-
-    double theta_up {70.};
-    double theta_low {50.};
+    //Intervals for merge
+    double theta_up {35.};
+    double theta_low {0.};
 
     auto* canvas {new TCanvas("canvas", TString::Format("Ex for diferent theta intervals at E_{beam} = %.1fMeV", T1))};
-    canvas->DivideSquare(4);
+    canvas->DivideSquare(5);
 
     std::vector<TH1D*> hExs;
 
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < 5; i++){
         std::vector<TH1D*> hs1;
 
         auto* hEx {new TH1D {
@@ -128,13 +129,56 @@ void merger_Intervals()
             }
         }
 
+        auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [2], [6])  + [7] * TMath::Voigt(x - [8], [2], [9]) ", -2, 2}};
+        f->SetParameters(150, 0, 0.07, 0.1, 250, 0.13, 0.1, 140, 0.4, 0.1);
+        //f->FixParameter(1, 0);
+        //f->FixParameter(5, 0.130);
+        //f->FixParameter(8, 0.435);
+        f->FixParameter(2, 0.0958);
+        f->SetParLimits(0, 0.1, 350);
+        f->SetParLimits(1, -0.05, 0.05);
+        f->SetParLimits(3, 0.05, 0.5);
+        f->SetParLimits(4, 0.1, 350);
+        f->SetParLimits(5, 0, 0.140);
+        f->SetParLimits(6, 0.05, 0.5);
+        f->SetParLimits(7, 0.1, 350);
+        f->SetParLimits(8, 0.4, 0.5);
+        f->SetParLimits(9, 0.05, 0.5);
 
+        hEx->Fit(f, "0M+I10000");
+        
+        auto* fGS {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+        double* paramsGS = f->GetParameters();
+        fGS->SetParameters(paramsGS);
+        auto* f1st {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+        double params1st[4];
+        params1st[0] = f->GetParameter(4);
+        params1st[1] = f->GetParameter(5);
+        params1st[2] = f->GetParameter(2);
+        params1st[3] = f->GetParameter(6);
+        f1st->SetParameters(params1st);
+        auto* f2nd {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
+        double params2nd[4];
+        params2nd[0] = f->GetParameter(7);
+        params2nd[1] = f->GetParameter(8);
+        params2nd[2] = f->GetParameter(2);
+        params2nd[3] = f->GetParameter(9);
+        f2nd->SetParameters(params2nd);
+
+
+        std::vector<int> colors {6, 8, 46};
         // plot
         canvas->cd(i+1);
         gStyle->SetOptStat(0);
         hEx->SetLineWidth(2);
         hEx->Draw("histe");
-        std::vector<int> colors {6, 8, 46};
+        f->Draw("same");
+        fGS->SetLineColor(colors[0]);
+        fGS->Draw("same");
+        f1st->SetLineColor(colors[1]);
+        f1st->Draw("same");
+        f2nd->SetLineColor(colors[2]);
+        f2nd->Draw("same");
         std::vector<std::string> labels {"0", "0.130", "0.435"};
         auto* leg1 {new TLegend {0.2, 0.2}};
         leg1->SetHeader("E_{x} [MeV]");
@@ -151,11 +195,11 @@ void merger_Intervals()
         leg1->Draw();
 
         // add text
-        auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
-        latex->Draw();
+        //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
+        //latex->Draw();
 
-        theta_up += 20.;
-        theta_low += 20.;
+        theta_up += 35.;
+        theta_low += 35.;
     }
 
 }

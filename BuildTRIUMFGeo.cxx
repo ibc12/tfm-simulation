@@ -51,7 +51,7 @@ void BuildTRIUMFGeo(bool draw = true)
 
     // BACKWARDS assembly
     ActSim::SilAssembly backAssembly {2, silUnit1_1500, true, false};
-    auto backOffset {-0.5 - (2 * driftX)}; // cm respect to actar rear (beam output)
+    auto backOffset {-3 - (2 * driftX)}; // cm respect to actar rear (beam output)
     backAssembly.SetOffsets(backOffset);
     backAssembly.SetAssemblyPlacements(l0Placements);
 

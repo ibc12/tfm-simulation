@@ -16,6 +16,7 @@ void ActPhysics::CrossSection::ReadData(const std::string& file)
     while(streamer >> angle >> xs)
     {
         fAngleData.push_back(angle * TMath::DegToRad());
+        fAngleDataGraph.push_back(angle);
         fXSData.push_back(xs);
         fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }
@@ -34,6 +35,7 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
     while(streamer >> angle >> xs)
     {
         fAngleData.push_back(angle * TMath::DegToRad());
+        fAngleDataGraph.push_back(angle);
         fXSData.push_back(xs);
         fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }
@@ -86,14 +88,27 @@ void ActPhysics::CrossSection::Init()
     // We need the Spline
     fCDF = new TSpline3 {"fCDF", &(fCDFData[0]), &(fAngleData[0]), (int)fCDFData.size(), "b2,e2", 0, 0};
     fCDF->SetTitle("CDF;r;#theta_{CM} [#circ]");
+    fCDFGraph = new TSpline3 {"fCDFGraph", &(fCDFData[0]), &(fAngleDataGraph[0]), (int)fCDFData.size(), "b2,e2", 0, 0};
+    fCDFGraph->SetTitle("CDF;r;#theta_{CM} [deg]");
 }
 
 void ActPhysics::CrossSection::Draw() const
 {
     auto* c {new TCanvas};
-    fCDF->SetLineWidth(2);
-    fCDF->SetLineColor(kRed);
-    fCDF->Draw();
+
+        // Crear un TGraph para dibujar los ejes
+    TGraph* graph = new TGraph(static_cast<int>(fAngleDataGraph.size()), &(fAngleDataGraph[0]), &(fXSData[0]));
+    graph->SetTitle(""); // Sin título para el gráfico
+    graph->Draw("AP"); // Dibuja el gráfico con puntos y ejes
+
+    // Configurar los ejes del TGraph
+    graph->GetXaxis()->SetTitle("Ángulo [deg]"); // Título del eje X
+    graph->GetYaxis()->SetTitle("d#sigma / d#Omega [mb sr^{-1}]"); // Título del eje Y
+
+    fCDFGraph->SetLineWidth(2);
+    fCDFGraph->SetLineColor(kRed);
+    fCDFGraph->SetLineWidth(3);
+    fCDFGraph->Draw();
 }
 
 double ActPhysics::CrossSection::Sample(const double angle)
@@ -103,8 +118,24 @@ double ActPhysics::CrossSection::Sample(const double angle)
 
 void ActPhysics::CrossSection::Theo()
 {
-    auto* c1 {new TCanvas};
-    fTheoXS = new TSpline3 {"theoXS", &(fAngleData[0]), &(fXSData[0]), (int)fAngleData.size(), "b2,e2", 0, 0};
+    auto* c1 = new TCanvas;
+
+    // Crear un TGraph para dibujar los ejes
+    TGraph* graph = new TGraph(static_cast<int>(fAngleDataGraph.size()), &(fAngleDataGraph[0]), &(fXSData[0]));
+    graph->SetTitle("TheoXS"); // Sin título para el gráfico
+    graph->Draw("AP"); // Dibuja el gráfico con puntos y ejes
+
+    // Configurar los ejes del TGraph
+    graph->GetXaxis()->SetTitle("Ángulo [deg]"); // Título del eje X
+    graph->GetYaxis()->SetTitle("d#sigma / d#Omega [mb sr^{-1}]"); // Título del eje Y
+
+    // Crear y dibujar el TSpline3
+    fTheoXS = new TSpline3("theoXS", &(fAngleDataGraph[0]), &(fXSData[0]), static_cast<int>(fAngleDataGraph.size()), "b2,e2", 0, 0);
     fTheoXS->SetLineColor(kRed);
-    fTheoXS->Draw();
-}
+    fTheoXS->SetLineWidth(3);
+    fTheoXS->Draw("same"); // Dibuja el spline en el mismo lienzo
+
+    c1->Modified(); // Marcar el lienzo como modificado
+    c1->Update(); // Volver a actualizar el lienzo para reflejar los cambios
+
+    }

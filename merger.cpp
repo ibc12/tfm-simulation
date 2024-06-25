@@ -55,11 +55,11 @@ void merger()
     double Nit {1.e6};
 
     // Set histogram
-    int nbins {200};
-    double xmin1 {-1};
-    double xmax1 {2};
+    int nbins {90};
+    double xmin1 {-0.6};
+    double xmax1 {1};
     auto* hEx {new TH1D {
-        "hEx", TString::Format("Ex for all peaks;E_{x} [MeV];Counts / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
+        "hEx", TString::Format("Ex para todos os picos;E_{x} [MeV];Contas / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
         xmin1, xmax1}};
     hEx->Sumw2();
     double ymin {0};
@@ -122,10 +122,13 @@ void merger()
     // f->FixParameter(5, 0.130);
     // f->FixParameter(9, 0.435);
     f->SetParLimits(0, 10, 350);
+    f->SetParLimits(1, -0.01, 0.01);
     f->SetParLimits(3, 0.05, 0.5);
     f->SetParLimits(4, 10, 350);
+    f->SetParLimits(5, 0.110, 0.140);
     f->SetParLimits(6, 0.05, 0.5);
     f->SetParLimits(7, 10, 350);
+    f->SetParLimits(8, 0.4, 0.5);
     f->SetParLimits(9, 0.05, 0.5);
 
     hEx->Fit(f, "0M+I10000");
@@ -161,7 +164,7 @@ void merger()
     f1st->Draw("same");
     f2nd->SetLineColor(colors[2]);
     f2nd->Draw("same");
-    //hEx->SaveAs("hit_merger_Exs.root");
+    hEx->SaveAs("hit_merger_Exs.root");
     std::vector<std::string> labels {"0", "0.130", "0.435"};
     auto* leg1 {new TLegend {0.2, 0.2}};
     leg1->SetHeader("E_{x} [MeV]");
@@ -178,8 +181,8 @@ void merger()
     leg1->Draw();
 
     // add text
-    auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
-    latex->Draw();
+    //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
+    //latex->Draw();
 
     auto* c1 {new TCanvas {"c1", "Merger canvas 2D"}};
     hKin->Draw("colz");

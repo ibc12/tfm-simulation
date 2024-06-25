@@ -14,11 +14,13 @@ namespace ActPhysics
     {
     private:
         std::vector<double> fAngleData {};
+        std::vector<double> fAngleDataGraph {};
         std::vector<double> fXSData {};
         double fSumXS {};
         double fTotalXS {};
         std::vector<double> fCDFData {};
         TSpline3* fCDF {};
+        TSpline3* fCDFGraph{};
         TSpline3* fTheoXS {};
 
     public:

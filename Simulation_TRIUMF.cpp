@@ -38,6 +38,7 @@
 void Simulation_TRIUMF(const std::string& beam, const std::string& target, const std::string& light,
                        const std::string& heavy, int neutronPS, int protonPS, double T1, double Ex, bool standalone)
 {
+    //gStyle->SetOptStat(0);
     // set batch mode if not an independent function
     if(!standalone)
         gROOT->SetBatch();
@@ -51,7 +52,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // SIGMAS
     // Resolutions to be implemented as gaussians
     const double sigmaSil {0.060 / 2.355};       // Si resolution
-    const double sigmaPercentBeam {0.008};       // Energy res of beam (Energy = Energy +- Energy * sigmaPerccentBeam)
+    const double sigmaPercentBeam {0.001122};       // Energy res of beam (Energy = Energy +- Energy * sigmaPerccentBeam)
     const double sigmaAngleLight {0.95 / 2.355}; // Sigma in angle (obtained by Juan during experimental analysis)
 
     // Parameters of beam in mm
@@ -86,6 +87,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     bool stragglingInSil {true};
     bool silResolution {true};
     bool thetaResolution {true};
+    bool exResolution {true};
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -256,8 +258,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
-        //double randEx {rand->BreitWigner(Ex, 0.1)};
         double randEx = Ex;
+        if(exResolution){
+            randEx = rand->BreitWigner(Ex, 0.1);
+        }
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
             continue;
@@ -572,6 +576,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hThetaCMDebug->SetLineColor(kRed);
     hThetaCMDebug->Draw("sames");
     xs->Theo();
+    xs->Draw();
 
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
@@ -608,6 +613,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         delete hThetaCMAll;
         delete hThetaLabDebug;
         delete hThetaVertexInGas;
+        delete hDeltaE0;
+        delete hThetaCMThetaLab;
+        delete hRPxEVertex;
         delete hThetaLabL1;
         delete hDistL0;
         delete hThetaESil;
