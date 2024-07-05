@@ -38,6 +38,8 @@
 void Simulation_TRIUMF(const std::string& beam, const std::string& target, const std::string& light,
                        const std::string& heavy, int neutronPS, int protonPS, double T1, double Ex, bool standalone)
 {
+    //gStyle->SetStatFontSize(0.08);
+    gStyle->SetOptStat(10);
     //gStyle->SetOptStat(0);
     // set batch mode if not an independent function
     if(!standalone)
@@ -129,7 +131,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hThetaESil {new TH2F("hThetaELab", "Theta vs Energy in Sil0;#theta_{LAB} [degree];E_{Sil0} [MeV]", 140, 0.,
                                180., 100, 0., 60.)};
     auto* hThetaEVertex {(TH2F*)hThetaESil->Clone("hThetaEVertex")};
-    hThetaEVertex->SetTitle("Theta vs EVertex; #theta [degree];E_{Vertex} [MeV]");
+    hThetaEVertex->SetTitle("Theta vs EVertex; #theta_{Lab} [deg];E_{Vertex} [MeV]");
     auto* hThetaVertexInGas {new TH2F("hThetaVertexInGas", "Theta vs Stopping point Vertex (X); #theta [degree];X_{vertex} [mm]", 140, 0.,
                                180., 256, 0., 256.)};
     auto* hRangeGas {(TH1F*)hDistL0->Clone("hRangeGas; Range [mm]")};    
@@ -260,7 +262,18 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // if not stopped but beam energy below kinematic threshold, continue
         double randEx = Ex;
         if(exResolution){
-            randEx = rand->BreitWigner(Ex, 0.1);
+            if(Ex == 0){
+                randEx = rand->BreitWigner(Ex, 0.1);
+            }
+            else if(Ex == 0.130)
+            {
+                randEx = rand->BreitWigner(Ex, 0.015);
+            }
+            else if(Ex == 0.435)
+            {
+                randEx = rand->BreitWigner(Ex, 0.08);
+            }
+            
         }
         auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, randEx).GetT1Thresh()};
         if(std::isnan(TBeam) || TBeam < beamThreshold){
@@ -539,8 +552,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     cAfter->cd(1);
     hThetaESil->Draw("col");
     cAfter->cd(2);
-    hThetaEVertex->Draw("col");
-    gtheoKinE->Draw("same");
+    hThetaEVertex->Draw("colz");
+    //gtheoKinE->Draw("same");
     cAfter->cd(3);
     hEexAfter->Draw("hist");
     cAfter->cd(4);
@@ -580,11 +593,19 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
 
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
-    cSP->DivideSquare(hsSP.size());
+    cSP->DivideSquare(4);
     for(int i = 0; i < hsSP.size(); i++)
     {
-        cSP->cd(i + 1);
-        hsSP[i]->Draw("colz");
+        
+        if(i<1){
+            cSP->cd(i + 1);
+            hsSP[i]->Draw("colz");
+        }
+        if(i>1){
+            cSP->cd(i );
+            hsSP[i]->Draw("colz");
+        }
+        
     }
 
     // SAVING

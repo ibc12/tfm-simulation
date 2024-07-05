@@ -62,15 +62,15 @@ void merger_Intervals()
     double xmin2 {0};
     double xmax2 {180};
     //Intervals for merge
-    double theta_up {35.};
-    double theta_low {0.};
+    double theta_up {30.};
+    double theta_low {10.};
 
     auto* canvas {new TCanvas("canvas", TString::Format("Ex for diferent theta intervals at E_{beam} = %.1fMeV", T1))};
-    canvas->DivideSquare(5);
+    canvas->DivideSquare(6);
 
     std::vector<TH1D*> hExs;
 
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < 6; i++){
         std::vector<TH1D*> hs1;
 
         auto* hEx {new TH1D {
@@ -131,18 +131,18 @@ void merger_Intervals()
 
         auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [2], [6])  + [7] * TMath::Voigt(x - [8], [2], [9]) ", -2, 2}};
         f->SetParameters(150, 0, 0.07, 0.1, 250, 0.13, 0.1, 140, 0.4, 0.1);
-        //f->FixParameter(1, 0);
-        //f->FixParameter(5, 0.130);
-        //f->FixParameter(8, 0.435);
-        f->FixParameter(2, 0.0958);
+        f->FixParameter(1, 0.0025);
+        f->FixParameter(5, 0.1267);
+        f->FixParameter(8, 0.4325);
+        f->FixParameter(2, 0.0948);
         f->SetParLimits(0, 0.1, 350);
-        f->SetParLimits(1, -0.05, 0.05);
+        //f->SetParLimits(1, -0.05, 0.05);
         f->SetParLimits(3, 0.05, 0.5);
         f->SetParLimits(4, 0.1, 350);
-        f->SetParLimits(5, 0, 0.140);
+        //f->SetParLimits(5, 0.08, 0.170);
         f->SetParLimits(6, 0.05, 0.5);
         f->SetParLimits(7, 0.1, 350);
-        f->SetParLimits(8, 0.4, 0.5);
+        //f->SetParLimits(8, 0.4, 0.5);
         f->SetParLimits(9, 0.05, 0.5);
 
         hEx->Fit(f, "0M+I10000");
@@ -198,8 +198,8 @@ void merger_Intervals()
         //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
         //latex->Draw();
 
-        theta_up += 35.;
-        theta_low += 35.;
+        theta_up += 20.;
+        theta_low += 20.;
     }
 
 }

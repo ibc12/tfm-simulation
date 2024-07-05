@@ -20,7 +20,7 @@
 
 #include <string>
 #include <vector>
-void merger()
+void merger_fit_picos()
 {
     ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
 
@@ -62,16 +62,9 @@ void merger()
         "hEx", TString::Format("Ex para todos os picos;E_{x} [MeV];Contas / %.0f keV", (xmax1 - xmin1) / nbins * 1000), nbins,
         xmin1, xmax1}};
     hEx->Sumw2();
-    double ymin {0};
-    double ymax {40};
-    double xmin2 {0};
-    double xmax2 {180};
-    auto* hKin {new TH2D {
-        "hKin", "Kinematics for all E_{x};Theta_{Lab} [degree];E_{Lab} [MeV]", nbins,
-        xmin2, xmax2, nbins, ymin, ymax}};
-    hKin->Sumw2();
     std::vector<TH1D*> hs1;
-    std::vector<TH2D*> hs2;
+    std::vector<TF1*> fits;
+    std::vector<double> sigmas;
 
     int contador {0};
     for(auto& df : dfs)
@@ -104,53 +97,32 @@ void merger()
         hEx->Add(h1.GetPtr());
         hs1.push_back((TH1D*)h1->Clone());
 
-        auto h2 {df.Histo2D(
-            {"h2", "Kinematics in for loop", hKin->GetNbinsX(), hKin->GetXaxis()->GetXmin(), hKin->GetXaxis()->GetXmax(), 
-                hKin->GetNbinsY(), hKin->GetYaxis()->GetXmin(), hKin->GetYaxis()->GetXmax()}, "theta3Lab", "EVertex")};
-        h2->Scale(scaling);
-        hKin->Add(h2.GetPtr());
-        hs2.push_back((TH2D*)h2->Clone());
-
         contador += 1;
+
+        TF1* fit = new TF1("fit", "gaus", xmin1, xmax1);
+        h1->Fit(fit, "Q");
+        fits.push_back(fit);
+
+        // Get sigma of the fit and store it
+        double sigma = fit->GetParameter(2);
+        sigmas.push_back(sigma);
+
+        // Print sigma of the fit
+        std::cout << "Sigma for Ex = " << Ex << " is " << fit->GetParameter(2) << std::endl;
 
         delete xs;
     }
 
-    auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [6], [7])  + [8] * TMath::Voigt(x - [9], [10], [11]) ", -2, 2}};
-    Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.015, 140, 0.4, 0.09646, 0.08};
-    f->SetParameters(params);
-    f->FixParameter(2, 0.1018);
-    f->FixParameter(6, 0.08895);
-    f->FixParameter(10, 0.09646);
-    f->SetParLimits(0, 10, 350);
-    f->SetParLimits(1, -0.01, 0.01);
-    f->SetParLimits(3, 0.05, 0.5);
-    f->SetParLimits(4, 10, 350);
-    f->SetParLimits(5, 0.110, 0.140);
-    f->SetParLimits(7, 0.0, 0.1);
-    f->SetParLimits(8, 10, 350);
-    f->SetParLimits(9, 0.4, 0.5);
-    f->SetParLimits(11, 0.03, 0.2);
 
-    hEx->Fit(f, "0M+I10000");
-    
-    auto* fGS {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
-    double* paramsGS = f->GetParameters();
-    fGS->SetParameters(paramsGS);
-    auto* f1st {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
-    double params1st[4];
-    params1st[0] = f->GetParameter(4);
-    params1st[1] = f->GetParameter(5);
-    params1st[2] = f->GetParameter(6);
-    params1st[3] = f->GetParameter(7);
-    f1st->SetParameters(params1st);
-    auto* f2nd {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
-    double params2nd[4];
-    params2nd[0] = f->GetParameter(8);
-    params2nd[1] = f->GetParameter(9);
-    params2nd[2] = f->GetParameter(10);
-    params2nd[3] = f->GetParameter(11);
-    f2nd->SetParameters(params2nd);
+    // Calculate and print the mean of the sigmas
+    double sigmaSum = 0;
+    for (const auto& sigma : sigmas)
+    {
+        sigmaSum += sigma;
+    }
+    double sigmaMean = sigmaSum / sigmas.size();
+    std::cout << "Mean of the sigmas is " << sigmaMean << std::endl;
+
 
     // plot
     std::vector<int> colors {6, 8, 46};
@@ -158,14 +130,14 @@ void merger()
     gStyle->SetOptStat(0);
     hEx->SetLineWidth(2);
     hEx->Draw("histe");
-    f->Draw("same");
-    fGS->SetLineColor(colors[0]);
-    fGS->Draw("same");
-    f1st->SetLineColor(colors[1]);
-    f1st->Draw("same");
-    f2nd->SetLineColor(colors[2]);
-    f2nd->Draw("same");
-    hEx->SaveAs("hit_merger_Exs.root");
+
+    for(size_t i = 0; i < fits.size(); ++i)
+    {
+        fits[i]->SetLineColor(colors[i]); // Different color for each fit
+        fits[i]->Draw("same");
+    }
+
+    //hEx->SaveAs("hit_merger_Exs.root");
     std::vector<std::string> labels {"0", "0.130", "0.435"};
     auto* leg1 {new TLegend {0.2, 0.2}};
     leg1->SetHeader("E_{x} [MeV]");
@@ -185,14 +157,4 @@ void merger()
     //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
     //latex->Draw();
 
-    auto* c1 {new TCanvas {"c1", "Merger canvas 2D"}};
-    hKin->Draw("colz");
-    auto* leg2 {new TLegend {0.2, 0.2}};
-    leg2->SetHeader("E_{x} [MeV]");
-    leg2->SetBorderSize(0);
-    leg2->SetFillStyle(0);
-    for(int i = 0; i < hs2.size(); i++)
-    {
-        leg2->AddEntry(hs2[i], labels[i].c_str());
-    }
 }
