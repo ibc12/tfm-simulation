@@ -22,6 +22,7 @@
 #include "TString.h"
 #include "TTree.h"
 #include "TVirtualPad.h"
+#include "TEfficiency.h"
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
@@ -516,6 +517,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         ugeoEff.push_back({x, TMath::Sqrt(y) / y0});
     }
 
+    auto* eff {new TEfficiency {*hThetaCM, *hThetaCMAll}};
+
     std::cout<<"Particles going backwards stopped in gas: "<<ParticlesStoppedGasBackwards<<std::endl;
 
     // plotting
@@ -608,8 +611,14 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         
     }
 
+    //efficiency
+    auto* cEff {new TCanvas("cEff", "Various Histograms")};
+    eff->Draw();
+
+
     // SAVING
     outFile->cd();
+    eff->Write("eff");
     outTree->Write();
     outFile->WriteObject(&geoEff, "efficiency");
     outFile->WriteObject(&ugeoEff, "uefficiency");
@@ -630,6 +639,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         delete cL1;
         delete cNoCut;
         delete cNew;
+        delete cEff;
         delete hThetaCM;
         delete hThetaCMAll;
         delete hThetaLabDebug;

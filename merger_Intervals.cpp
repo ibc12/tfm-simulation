@@ -24,6 +24,8 @@ void merger_Intervals()
 
     ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(10000);
 
+    ROOT::Math::IntegratorOneDimOptions::SetDefaultIntegrator("Gauss");
+
     ROOT::EnableImplicitMT();
 
     double T1 {7.5};
@@ -82,7 +84,7 @@ void merger_Intervals()
         std::vector<TH1D*> hs1;
 
         auto* hEx {new TH1D {
-        TString::Format("hEx %.0f-%.0f", theta_low, theta_up), TString::Format("Exs \\ \\theta_{Lab} \\in (%.0f , %.0f) [deg];E_{x} [MeV];Counts / %.0f keV", 
+        TString::Format("hEx %.0f-%.0f", theta_low, theta_up), TString::Format("Exs  #theta_{CM} #in (%.0f , %.0f) [deg];E_{x} [MeV];Counts / %.0f keV", 
         theta_low, theta_up, (xmax1 - xmin1) / nbins * 1000), nbins,xmin1, xmax1}};
         hEx->Sumw2();
 
@@ -113,7 +115,7 @@ void merger_Intervals()
             // compute scaling factor
             double scaling {(Nt * Np * intervalXS) / Nit};
             // Get temporary histogram
-            auto str {TString::Format("%f <= theta3Lab && theta3Lab < %f", theta_low, theta_up)};
+            auto str {TString::Format("%f <= theta3CM && theta3CM < %f", theta_low, theta_up)};
             // %f indicates that you are formating a float
             // Create a node: a copy of the RDF with custom cuts, new columns, etc
             auto node {df.Filter(str.Data())}; // this filters all the columns,
@@ -177,14 +179,14 @@ void merger_Intervals()
         params2nd[3] = f->GetParameter(11);
         f2nd->SetParameters(params2nd);
 
-        double centerInterval {(theta_up-theta_low)/2};
+        double centerInterval {theta_up-(theta_up-theta_low)/2};
         g_GS->SetPoint(g_GS->GetN(), centerInterval, fGS->Integral(-2,2) / hEx->GetBinWidth(0));
         g_1st->SetPoint(g_1st->GetN(), centerInterval, f1st->Integral(-2,2) / hEx->GetBinWidth(0));
         g_2nd->SetPoint(g_2nd->GetN(), centerInterval, f2nd->Integral(-2,2) / hEx->GetBinWidth(0));
 
         g_GS->SetPointError(g_GS->GetN() - 1, 0, TMath::Sqrt(fGS->Integral(-2,2) / hEx->GetBinWidth(0)));
-        g_GS->SetPointError(g_1st->GetN() - 1, 0, TMath::Sqrt(f1st->Integral(-2,2) / hEx->GetBinWidth(0)));
-        g_GS->SetPointError(g_2nd->GetN() - 1, 0, TMath::Sqrt(f2nd->Integral(-2,2) / hEx->GetBinWidth(0)));
+        g_1st->SetPointError(g_1st->GetN() - 1, 0, TMath::Sqrt(f1st->Integral(-2,2) / hEx->GetBinWidth(0)));
+        g_2nd->SetPointError(g_2nd->GetN() - 1, 0, TMath::Sqrt(f2nd->Integral(-2,2) / hEx->GetBinWidth(0)));
 
 
 
@@ -224,4 +226,33 @@ void merger_Intervals()
         theta_low += 20.;
     }
 
+    auto* canvas2 = new TCanvas("canvas2", "Integrales con errores", 1200, 800);
+    canvas2->Divide(3, 1);
+
+    canvas2->cd(1);
+    gPad->SetLogy();
+    g_GS->SetTitle("Integral GS;#theta_{CM} [deg];Integral");
+    g_GS->SetMarkerStyle(21);
+    g_GS->Draw("AP");
+
+    canvas2->cd(2);
+    gPad->SetLogy();
+    g_1st->SetTitle("Integral 1st;#theta_{CM} [deg];Integral");
+    g_1st->SetMarkerStyle(22);
+    g_1st->Draw("AP");
+
+    canvas2->cd(3);
+    gPad->SetLogy();
+    g_2nd->SetTitle("Integral 2nd;#theta_{CM} [deg];Integral");
+    g_2nd->SetMarkerStyle(23);
+    g_2nd->Draw("AP");
+
+
+
+    auto* fout {new TFile {"./graphs.root", "recreate"}};
+    g_GS->Write("gGS");
+    g_1st->Write("g1");
+    g_2nd->Write("g2");
+
+    fout->Close();
 }
