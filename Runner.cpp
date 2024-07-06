@@ -12,7 +12,7 @@
 // standalone (only applies to simu setting):
 // if true, runs only first item in Ex vector and plots in-simulation results
 // if false, runs all Ex simulations but doesn't plot
-void Runner(TString what = "plot", bool standalone = false)
+void Runner(TString what = "plot", bool standalone = true)
 {
     // Settings
     // Names of particles
