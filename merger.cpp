@@ -117,20 +117,25 @@ void merger()
     }
 
     auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [6], [7])  + [8] * TMath::Voigt(x - [9], [10], [11]) ", -2, 2}};
-    Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.015, 140, 0.4, 0.09646, 0.08};
+    Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.02, 140, 0.4, 0.09646, 0.08};
     f->SetParameters(params);
     f->FixParameter(2, 0.1018);
     f->FixParameter(6, 0.08895);
     f->FixParameter(10, 0.09646);
-    f->SetParLimits(0, 10, 350);
+    f->FixParameter(0,0);
+    //f->FixParameter(7, 0.015);
+    f->SetParLimits(0, 0, 350);
     f->SetParLimits(1, -0.01, 0.01);
     f->SetParLimits(3, 0.05, 0.5);
     f->SetParLimits(4, 10, 350);
-    f->SetParLimits(5, 0.110, 0.140);
-    f->SetParLimits(7, 0.0, 0.1);
+    f->SetParLimits(5, 0.120, 0.140);
+    f->SetParLimits(7, 0.01, 0.025);
     f->SetParLimits(8, 10, 350);
     f->SetParLimits(9, 0.4, 0.5);
     f->SetParLimits(11, 0.03, 0.2);
+
+    // Set the minimizer to Minuit2
+    ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Simplex");
 
     hEx->Fit(f, "0M+I10000");
     

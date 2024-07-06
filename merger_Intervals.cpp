@@ -4,6 +4,7 @@
 #include "Rtypes.h"
 
 #include "TAttLine.h"
+#include "TGraphErrors.h"
 #include "TCanvas.h"
 #include "TH1.h"
 #include "TLegend.h"
@@ -64,6 +65,13 @@ void merger_Intervals()
     //Intervals for merge
     double theta_up {30.};
     double theta_low {10.};
+
+    //Create TGraph for Angular Distribution
+    auto* g_GS = new TGraphErrors();
+    auto* g_1st = new TGraphErrors();
+    auto* g_2nd = new TGraphErrors();
+
+
 
     auto* canvas {new TCanvas("canvas", TString::Format("Ex for diferent theta intervals at E_{beam} = %.1fMeV", T1))};
     canvas->DivideSquare(6);
@@ -129,21 +137,25 @@ void merger_Intervals()
             }
         }
 
-        auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [2], [6])  + [7] * TMath::Voigt(x - [8], [2], [9]) ", -2, 2}};
-        f->SetParameters(150, 0, 0.07, 0.1, 250, 0.13, 0.1, 140, 0.4, 0.1);
-        f->FixParameter(1, 0.0025);
-        f->FixParameter(5, 0.1267);
-        f->FixParameter(8, 0.4325);
-        f->FixParameter(2, 0.0948);
+        auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [6], [7])  + [8] * TMath::Voigt(x - [9], [10], [11]) ", -2, 2}};
+        Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.02, 140, 0.4, 0.09646, 0.08};
+        f->SetParameters(params);
+        //Fix sigmas
+        f->FixParameter(2, 0.1018);
+        f->FixParameter(6, 0.08895);
+        f->FixParameter(10, 0.09646);
+        //Fix Ex
+        f->FixParameter(1, -0.0099);
+        f->FixParameter(5, 0.1201);
+        f->FixParameter(9, 0.4325);
+        //Fix Gammas
+        f->FixParameter(3, 0.104692);
+        f->FixParameter(7, 0.0249969);
+        f->FixParameter(11, 0.0761967);
+        //Par Lims to amplitudes
         f->SetParLimits(0, 0.1, 350);
-        //f->SetParLimits(1, -0.05, 0.05);
-        f->SetParLimits(3, 0.05, 0.5);
         f->SetParLimits(4, 0.1, 350);
-        //f->SetParLimits(5, 0.08, 0.170);
-        f->SetParLimits(6, 0.05, 0.5);
-        f->SetParLimits(7, 0.1, 350);
-        //f->SetParLimits(8, 0.4, 0.5);
-        f->SetParLimits(9, 0.05, 0.5);
+        f->SetParLimits(8, 0.1, 350);
 
         hEx->Fit(f, "0M+I10000");
         
@@ -154,16 +166,26 @@ void merger_Intervals()
         double params1st[4];
         params1st[0] = f->GetParameter(4);
         params1st[1] = f->GetParameter(5);
-        params1st[2] = f->GetParameter(2);
-        params1st[3] = f->GetParameter(6);
+        params1st[2] = f->GetParameter(6);
+        params1st[3] = f->GetParameter(7);
         f1st->SetParameters(params1st);
         auto* f2nd {new TF1{"fGS", "[0] * TMath::Voigt(x - [1], [2], [3])", -2, 2}};
         double params2nd[4];
-        params2nd[0] = f->GetParameter(7);
-        params2nd[1] = f->GetParameter(8);
-        params2nd[2] = f->GetParameter(2);
-        params2nd[3] = f->GetParameter(9);
+        params2nd[0] = f->GetParameter(8);
+        params2nd[1] = f->GetParameter(9);
+        params2nd[2] = f->GetParameter(10);
+        params2nd[3] = f->GetParameter(11);
         f2nd->SetParameters(params2nd);
+
+        double centerInterval {(theta_up-theta_low)/2};
+        g_GS->SetPoint(g_GS->GetN(), centerInterval, fGS->Integral(-2,2) / hEx->GetBinWidth(0));
+        g_1st->SetPoint(g_1st->GetN(), centerInterval, f1st->Integral(-2,2) / hEx->GetBinWidth(0));
+        g_2nd->SetPoint(g_2nd->GetN(), centerInterval, f2nd->Integral(-2,2) / hEx->GetBinWidth(0));
+
+        g_GS->SetPointError(g_GS->GetN() - 1, 0, TMath::Sqrt(fGS->Integral(-2,2) / hEx->GetBinWidth(0)));
+        g_GS->SetPointError(g_1st->GetN() - 1, 0, TMath::Sqrt(f1st->Integral(-2,2) / hEx->GetBinWidth(0)));
+        g_GS->SetPointError(g_2nd->GetN() - 1, 0, TMath::Sqrt(f2nd->Integral(-2,2) / hEx->GetBinWidth(0)));
+
 
 
         std::vector<int> colors {6, 8, 46};
