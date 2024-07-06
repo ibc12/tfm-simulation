@@ -94,10 +94,13 @@ void angular_distribution()
         auto xs {num / denom};
         xs *= 1e27;
 
- 
+
+        double coeffNum {TMath::Sqrt(num)/denom};
+        double coeffNb {-num / (Nt * Omega * epsilon) / TMath::Power(Nb, 2)};
+        double uNb {TMath::Sqrt(Nb)};
 
         g1_xs->SetPoint(p, centralInterval[p], xs);
-        g1_xs->SetPointError(p, 0, TMath::Sqrt(num)/denom);
+        g1_xs->SetPointError(p, 0, TMath::Sqrt(coeffNum * coeffNum + coeffNb * coeffNb * uNb * uNb));
     }
     for(int p = 0; p < g0->GetN(); p++)
     {
@@ -116,6 +119,7 @@ void angular_distribution()
 
         double num {g2->GetPointY(p)};
         double denom {Nt * Nb * epsilon * Omega};
+        
  
 
         auto xs {num / denom};
@@ -124,9 +128,6 @@ void angular_distribution()
         g2_xs->SetPoint(p, centralInterval[p], xs);
         g2_xs->SetPointError(p, 0, TMath::Sqrt(num)/denom);
     }
-
-
-
 
 
     auto* gtheo0 {new TGraphErrors("./Inputs/TheoXS/7.5MeV/angs12nospin.dat", "%lg %lg")};
@@ -160,25 +161,28 @@ void angular_distribution()
     cXS->cd(1);
     gPad->SetLogy();
     g0_xs->SetMarkerStyle(24);
+    g0_xs->Scale(1/TMath::TwoPi());
     g0_xs->Draw("AP");
     gtheo0->Draw("same");
-    gtheo0->GetXaxis()->SetTitle("Theta (degrees)");
-    gtheo0->GetYaxis()->SetTitle("Cross Section (mb)");
+    g0_xs->GetXaxis()->SetTitle("Theta (deg)");
+    g0_xs->GetYaxis()->SetTitle("Cross Section (mb/sr)");
 
     cXS->cd(2);
     gPad->SetLogy();
     g1_xs->SetMarkerStyle(24);
+    g1_xs->Scale(1/TMath::TwoPi());
     g1_xs->Draw("AP");
     gtheo1->Draw("same");
-    gtheo1->GetXaxis()->SetTitle("Theta (degrees)");
-    gtheo1->GetYaxis()->SetTitle("Cross Section (mb)");
+    g1_xs->GetXaxis()->SetTitle("Theta (deg)");
+    g1_xs->GetYaxis()->SetTitle("Cross Section (mb/sr)");
     
     cXS->cd(3);
     gPad->SetLogy();
     g2_xs->SetMarkerStyle(24);
+    g2_xs->Scale(1/TMath::TwoPi());
     g2_xs->Draw("AP");
-    g2_xs->GetXaxis()->SetTitle("Theta (degrees)");
-    gtheo2->GetYaxis()->SetTitle("Cross Section (mb)");
+    g2_xs->GetXaxis()->SetTitle("Theta (deg)");
+    g2_xs->GetYaxis()->SetTitle("Cross Section (mb/sr)");
     gtheo2->Draw("same");
     
 

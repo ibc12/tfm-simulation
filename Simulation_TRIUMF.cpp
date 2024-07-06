@@ -185,6 +185,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     {
         TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
         xs->ReadData(data_to_read);
+        std::cout<<xs->GetTotalXSmbarn()<<std::endl;
     }
     else if(Ex == 0.130)
     {
@@ -229,6 +230,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     outTree->Branch("EVertex", &EVertex_tree);
     double theta3Lab_tree {};
     outTree->Branch("theta3Lab", &theta3Lab_tree);
+    double phi3CM_tree {};
+    outTree->Branch("phi3CM", &phi3CM_tree);
 
     // RUN!
     // print fancy info (dont pay attention to this)
@@ -493,6 +496,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             theta3CM_tree = theta3CM * TMath::RadToDeg();
             EVertex_tree = T3Recon;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
+            phi3CM_tree = phi3CM;
             outTree->Fill();
         }
 

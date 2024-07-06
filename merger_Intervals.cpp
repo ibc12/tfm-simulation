@@ -98,17 +98,20 @@ void merger_Intervals()
             if(Ex == 0)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
-                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
+                xs->ReadData(data_to_read);
+                intervalXS = xs->GetTotalXScm();
             }
             else if(Ex == 0.130)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
-                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
+                xs->ReadData(data_to_read);
+                intervalXS = xs->GetTotalXScm();
             }
             else if(Ex == 0.435)
             {
                 TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
-                intervalXS = xs->xsIntervalcm(data_to_read, theta_low, theta_up);
+                xs->ReadData(data_to_read);
+                intervalXS = xs->GetTotalXScm();
             }
 
             
