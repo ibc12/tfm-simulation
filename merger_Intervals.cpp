@@ -51,7 +51,8 @@ void merger_Intervals()
     // Compute scaling factors
     double gasDensity {2.428e-4}; // g/cm3
     double gasMolarDensity {0.9 * 4.0282 + 0.1 * 58.12}; // g/mol 
-    double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
+    //double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
+    double Nt {1.082e21};
     double Np {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double Nit {1.e6};
 
@@ -146,17 +147,17 @@ void merger_Intervals()
         Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.02, 140, 0.4, 0.09646, 0.08};
         f->SetParameters(params);
         //Fix sigmas
-        f->FixParameter(2, 0.102165);
-        f->FixParameter(6, 0.0892859);
-        f->FixParameter(10, 0.0959508);
+        f->FixParameter(2, 0.106039);
+        f->FixParameter(6, 0.0932712);
+        f->FixParameter(10, 0.0996123);
         //Fix Ex
-        f->FixParameter(1, -0.0006455);
-        f->FixParameter(5, 0.125925);
-        f->FixParameter(9, 0.434586);
+        f->FixParameter(1, -3.43436e-03);
+        f->FixParameter(5, 1.27182e-01);
+        f->FixParameter(9, 4.34972e-01);
         //Fix Gammas
-        f->FixParameter(3, 0.105595);
-        f->FixParameter(7, 0.0101);
-        f->FixParameter(11, 0.07797);
+        f->FixParameter(3, 9.77561e-02);
+        f->FixParameter(7, 2.36665e-02);
+        f->FixParameter(11, 8.71715e-02);
         //Par Lims to amplitudes
         f->SetParLimits(0, 0.1, 350);
         f->SetParLimits(4, 0.1, 350);

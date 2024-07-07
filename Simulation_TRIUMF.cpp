@@ -183,19 +183,21 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* xs {new ActPhysics::CrossSection()};
     if(Ex == 0)
     {
-        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
+        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/input_g0.dat", T1)};
         xs->ReadData(data_to_read);
         std::cout<<xs->GetTotalXSmbarn()<<std::endl;
     }
     else if(Ex == 0.130)
     {
-        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
+        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/input_g1.dat", T1)};
         xs->ReadData(data_to_read);
+        std::cout<<xs->GetTotalXSmbarn()<<std::endl;
     }
     else if(Ex == 0.435)
     {
-        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
+        TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/input_g2.dat", T1)};
         xs->ReadData(data_to_read);
+        std::cout<<xs->GetTotalXSmbarn()<<std::endl;
     }
     
     double beamParticles {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days

@@ -14,7 +14,7 @@ void mg()
 
     // Creamos o multigraph
     auto* mg {new TMultiGraph};
-    mg->SetTitle("Counts per peak;#theta_{CM} [deg];Counts");
+    mg->SetTitle("Contas por pico;#theta_{CM} [deg];Contas");
 
     // Estilos
     std::vector<int> colors {6, 8, 46};

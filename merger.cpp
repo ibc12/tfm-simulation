@@ -50,7 +50,8 @@ void merger()
     // Compute scaling factors
     double gasDensity {2.428e-4}; // g/cm3
     double gasMolarDensity {0.9 * 4.0282 + 0.1 * 58.12}; // g/mol 
-    double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6}; // particles/cm3 * ACTAR length
+    //double Nt {(gasDensity/gasMolarDensity) * 6.022e23 * 25.6 * (95 * 2 /(95*2 +5*4+5*10))}; // particles/cm3 * ACTAR length
+    double Nt {1.082e21};
     double Np {(3e3) * 6 * 24 * 3600}; // 3e5 pps 6 days
     double Nit {1.e6};
 
@@ -82,16 +83,19 @@ void merger()
         {
             TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angs12nospin.dat", T1)};
             xs->ReadData(data_to_read);
+            std::cout<<xs->GetTotalXSmbarn()<<std::endl;
         }
         else if(Ex == 0.130)
         {
             TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp12nospin.dat", T1)};
             xs->ReadData(data_to_read);
+            std::cout<<xs->GetTotalXSmbarn()<<std::endl;
         }
         else if(Ex == 0.435)
         {
             TString data_to_read {TString::Format("./Inputs/TheoXS/%.1fMeV/angp32nospin.dat", T1)};
             xs->ReadData(data_to_read);
+            std::cout<<xs->GetTotalXSmbarn()<<std::endl;
         }
 
         double totalXS {xs->GetTotalXScm()};

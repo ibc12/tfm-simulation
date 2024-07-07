@@ -18,7 +18,7 @@ void ActPhysics::CrossSection::ReadData(const std::string& file)
         fAngleData.push_back(angle * TMath::DegToRad());
         fAngleDataGraph.push_back(angle);
         fXSData.push_back(xs);
-        fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
+        fTotalXS += xs * TMath::TwoPi() * (1* TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }
     streamer.close();
     //Once is read, we initialize our object
@@ -37,7 +37,7 @@ void ActPhysics::CrossSection::ReadData(const TString& file)
         fAngleData.push_back(angle * TMath::DegToRad());
         fAngleDataGraph.push_back(angle);
         fXSData.push_back(xs);
-        fTotalXS += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
+        fTotalXS += xs * TMath::TwoPi() * (1* TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
     }
     streamer.close();
     //Once is read, we initialize our object
@@ -58,7 +58,7 @@ double ActPhysics::CrossSection::xsIntervalcm(const TString& file, double minAng
         // Only process the data if the angle is within the specified range
         if (angle >= minAngle && angle <= maxAngle)
         {
-            xsIntervalValue += xs * (angle * TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
+            xsIntervalValue += xs * TMath::TwoPi() * (1* TMath::DegToRad()) * TMath::Sin(angle * TMath::DegToRad());
         }
     }
     streamer.close();
