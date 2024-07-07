@@ -129,7 +129,8 @@ void merger_fit_picos()
     auto* c0 {new TCanvas {"c0", "Merger canvas 1D"}};
     gStyle->SetOptStat(0);
     hEx->SetLineWidth(2);
-    hEx->Draw("histe");
+    hEx->GetXaxis()->SetRangeUser(-0.8, 1);
+    hEx->Draw("hist");
 
     for(size_t i = 0; i < fits.size(); ++i)
     {

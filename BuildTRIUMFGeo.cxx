@@ -93,5 +93,5 @@ void BuildTRIUMFGeo(bool draw = true)
 
     // and draw it if necessary
     if(draw)
-        geo.Draw();
+        geo.Draw(false);
 }

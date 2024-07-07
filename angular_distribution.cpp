@@ -33,8 +33,13 @@ void angular_distribution()
     auto* eff2 {fin2->Get<TEfficiency>("eff")};
 
 
-    std::vector<double> theta_low {10., 30., 50., 70., 90., 110.};
-    std::vector<double> theta_up {30., 50., 70., 90., 110., 130.};
+    std::vector<double> theta_low {20., 30., 40., 50., 60., 70., 80., 90., 100., 110., 120.};
+    std::vector<double> theta_up  {30., 40., 50., 60., 70., 80., 90., 100., 110., 120., 130.};
+
+
+
+    //std::vector<double> theta_low {10., 30., 50., 70., 90., 110.};
+    //std::vector<double> theta_up {30., 50., 70., 90., 110., 130.};
 
     std::vector<double> solidAngle;
     std::vector<double> centralInterval;
@@ -68,9 +73,12 @@ void angular_distribution()
         xs *= 1e27;
 
  
+        double coeffNum {TMath::Sqrt(num)/denom};
+        double coeffNb {-num / (Nt * Omega * epsilon) / TMath::Power(Nb, 2)};
+        double uNb {TMath::Sqrt(Nb)};
 
         g0_xs->SetPoint(p, centralInterval[p], xs);
-        g0_xs->SetPointError(p, 0, TMath::Sqrt(num)/denom);
+        g0_xs->SetPointError(p, 0, TMath::Sqrt(coeffNum * coeffNum + coeffNb * coeffNb * uNb * uNb)*1e27);
     }
     for(int p = 0; p < g1->GetN(); p++)
     {
@@ -100,7 +108,7 @@ void angular_distribution()
         double uNb {TMath::Sqrt(Nb)};
 
         g1_xs->SetPoint(p, centralInterval[p], xs);
-        g1_xs->SetPointError(p, 0, TMath::Sqrt(coeffNum * coeffNum + coeffNb * coeffNb * uNb * uNb));
+        g1_xs->SetPointError(p, 0, TMath::Sqrt(coeffNum * coeffNum + coeffNb * coeffNb * uNb * uNb)*1e27);
     }
     for(int p = 0; p < g0->GetN(); p++)
     {
@@ -125,8 +133,13 @@ void angular_distribution()
         auto xs {num / denom};
         xs *= 1e27;
 
+
+        double coeffNum {TMath::Sqrt(num)/denom};
+        double coeffNb {-num / (Nt * Omega * epsilon) / TMath::Power(Nb, 2)};
+        double uNb {TMath::Sqrt(Nb)};
+
         g2_xs->SetPoint(p, centralInterval[p], xs);
-        g2_xs->SetPointError(p, 0, TMath::Sqrt(num)/denom);
+        g2_xs->SetPointError(p, 0, TMath::Sqrt(coeffNum * coeffNum + coeffNb * coeffNb * uNb * uNb)*1e27);
     }
 
 

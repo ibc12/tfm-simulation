@@ -119,23 +119,23 @@ void merger()
     auto* f {new TF1{"f", "[0] * TMath::Voigt(x - [1], [2], [3]) + [4] * TMath::Voigt(x - [5], [6], [7])  + [8] * TMath::Voigt(x - [9], [10], [11]) ", -2, 2}};
     Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.02, 140, 0.4, 0.09646, 0.08};
     f->SetParameters(params);
-    f->FixParameter(2, 0.101819);
-    f->FixParameter(6, 0.0889543);
-    f->FixParameter(10, 0.0957446);
+    f->FixParameter(2, 0.102165);
+    f->FixParameter(6, 0.0892859);
+    f->FixParameter(10, 0.0959508);
     f->FixParameter(1,0);
     //f->FixParameter(7, 0.015);
-    f->SetParLimits(0, 0, 350);
+    f->SetParLimits(0, 0, 3500);
     f->SetParLimits(1, -0.01, 0.01);
     f->SetParLimits(3, 0.05, 0.5);
-    f->SetParLimits(4, 10, 350);
-    f->SetParLimits(5, 0.120, 0.140);
+    f->SetParLimits(4, 10, 3500);
+    f->SetParLimits(5, 0.121, 0.140);
     f->SetParLimits(7, 0.01, 0.025);
-    f->SetParLimits(8, 10, 350);
+    f->SetParLimits(8, 10, 3500);
     f->SetParLimits(9, 0.4, 0.5);
     f->SetParLimits(11, 0.03, 0.2);
 
     // Set the minimizer to Minuit2
-    ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Simplex");
+    //ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2", "Simplex");
 
     hEx->Fit(f, "0M+I10000");
     
@@ -162,7 +162,8 @@ void merger()
     auto* c0 {new TCanvas {"c0", "Merger canvas 1D"}};
     gStyle->SetOptStat(0);
     hEx->SetLineWidth(2);
-    hEx->Draw("histe");
+    hEx->Draw("hist");
+    hEx->GetXaxis()->SetRangeUser(-0.8, 1);
     f->Draw("same");
     fGS->SetLineColor(colors[0]);
     fGS->Draw("same");
@@ -190,14 +191,14 @@ void merger()
     //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
     //latex->Draw();
 
-    auto* c1 {new TCanvas {"c1", "Merger canvas 2D"}};
-    hKin->Draw("colz");
-    auto* leg2 {new TLegend {0.2, 0.2}};
-    leg2->SetHeader("E_{x} [MeV]");
-    leg2->SetBorderSize(0);
-    leg2->SetFillStyle(0);
-    for(int i = 0; i < hs2.size(); i++)
-    {
-        leg2->AddEntry(hs2[i], labels[i].c_str());
-    }
+    //auto* c1 {new TCanvas {"c1", "Merger canvas 2D"}};
+    //hKin->Draw("colz");
+    //auto* leg2 {new TLegend {0.2, 0.2}};
+    //leg2->SetHeader("E_{x} [MeV]");
+    //leg2->SetBorderSize(0);
+    //leg2->SetFillStyle(0);
+    //for(int i = 0; i < hs2.size(); i++)
+    //{
+    //    leg2->AddEntry(hs2[i], labels[i].c_str());
+    //}
 }

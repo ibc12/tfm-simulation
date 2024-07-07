@@ -300,7 +300,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         double theta3CMBefore {-1}; // Spline some cases theta<0, we only want theta>0
         while(theta3CMBefore < 0){theta3CMBefore = xs->Sample(rand->Uniform());} // sample in rads
 
-        kingen.ComputeRecoilKinematics(theta3CMBefore, phi3CM, 3, false);
+        kingen.ComputeRecoilKinematics(theta3CMBefore, phi3CM);
 
         // 3.4-> The you have the kinematics in the lab by just calling the getters: GetTheta3Lab(), GetT3Lab(), etc
         auto phi3Lab {kingen.GetPhi3Lab()};

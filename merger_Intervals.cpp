@@ -66,7 +66,7 @@ void merger_Intervals()
     double xmax2 {180};
     //Intervals for merge
     double theta_up {30.};
-    double theta_low {10.};
+    double theta_low {20.};
 
     //Create TGraph for Angular Distribution
     auto* g_GS = new TGraphErrors();
@@ -76,11 +76,11 @@ void merger_Intervals()
 
 
     auto* canvas {new TCanvas("canvas", TString::Format("Ex for diferent theta intervals at E_{beam} = %.1fMeV", T1))};
-    canvas->DivideSquare(6);
+    canvas->DivideSquare(11);
 
     std::vector<TH1D*> hExs;
 
-    for(int i = 0; i < 6; i++){
+    for(int i = 0; i < 11; i++){
         std::vector<TH1D*> hs1;
 
         auto* hEx {new TH1D {
@@ -146,17 +146,17 @@ void merger_Intervals()
         Double_t params[12] = {150, 0, 0.1018, 0.1, 250, 0.13, 0.08895, 0.02, 140, 0.4, 0.09646, 0.08};
         f->SetParameters(params);
         //Fix sigmas
-        f->FixParameter(2, 0.1018);
-        f->FixParameter(6, 0.08895);
-        f->FixParameter(10, 0.09646);
+        f->FixParameter(2, 0.102165);
+        f->FixParameter(6, 0.0892859);
+        f->FixParameter(10, 0.0959508);
         //Fix Ex
-        f->FixParameter(1, -0.0099);
-        f->FixParameter(5, 0.1201);
-        f->FixParameter(9, 0.4325);
+        f->FixParameter(1, -0.0006455);
+        f->FixParameter(5, 0.125925);
+        f->FixParameter(9, 0.434586);
         //Fix Gammas
-        f->FixParameter(3, 0.104692);
-        f->FixParameter(7, 0.0249969);
-        f->FixParameter(11, 0.0761967);
+        f->FixParameter(3, 0.105595);
+        f->FixParameter(7, 0.0101);
+        f->FixParameter(11, 0.07797);
         //Par Lims to amplitudes
         f->SetParLimits(0, 0.1, 350);
         f->SetParLimits(4, 0.1, 350);
@@ -225,8 +225,8 @@ void merger_Intervals()
         //auto* latex {new TLatex{0.5, 0.5, "#font[42]{#sigma #approx 70 keV}"}};
         //latex->Draw();
 
-        theta_up += 20.;
-        theta_low += 20.;
+        theta_up += 10.;
+        theta_low += 10.;
     }
 
     auto* canvas2 = new TCanvas("canvas2", "Integrales con errores", 1200, 800);
